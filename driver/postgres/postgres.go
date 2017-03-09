@@ -1,6 +1,6 @@
 package postgres
 import (
-    "bitbucket.org/cygnux/kepler/xql"
+    "github.com/archsh/go.xql"
     "fmt"
     "reflect"
     "strings"

@@ -2,7 +2,6 @@ package xql
 
 import (
     "reflect"
-    "bitbucket.org/cygnux/kepler/utils"
     "strings"
 )
 
@@ -44,7 +43,7 @@ func DeclareTable(name string, entity interface{}, schema ...string) *Table {
             c := Column{PropertyName:f.Name}
             x_tags := strings.Split(f.Tag.Get("xql"),",")
             if len(x_tags) < 1 || x_tags[0]=="" {
-                c.FieldName = utils.Camel2Underscore(f.Name)
+                c.FieldName = Camel2Underscore(f.Name)
             }else if x_tags[0] == "-" {
                 continue
             }else{

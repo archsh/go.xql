@@ -4,13 +4,25 @@ import (
     "testing"
     "time"
     _ "github.com/lib/pq"
-    "bitbucket.org/cygnux/kepler/models/metas"
     "github.com/archsh/go.uuid"
-    _ "bitbucket.org/cygnux/kepler/xql/driver/postgres"
+    _ "github.com/archsh/go.xql/driver/postgres"
 
 )
 
-var MovieCrew = DeclareTable("metas_crews", &metas.Crew{}, "deneb")
+type Crew struct {
+    Id          string `json:"id"`
+    FullName    string `json:"fullName" xql:"fullname"`
+    FirstName   string `json:"firstName"`
+    MiddleName  string `json:"middleName"`
+    LastName    string `json:"lastName"`
+    Region      string `json:"region"`
+    ImdbId      string `json:"imdbId"`
+    Description string `json:"description"`
+    Created     *time.Time `json:"created"`
+    Updated     *time.Time `json:"Updated"`
+}
+
+var MovieCrew = DeclareTable("metas_crews", &Crew{}, "deneb")
 
 func TestCreateEngine(t *testing.T) {
     t1 := time.Now()
@@ -33,8 +45,8 @@ func TestQuerySet_Insert(t *testing.T) {
     }
     t.Log("MovieCrew:> ", MovieCrew)
     sess := engine.MakeSession()
-    c1 := metas.Crew{Id:uuid.NewV4().String(), FullName:"Tom Cruse", Region:"US"}
-    c2 := metas.Crew{Id:uuid.NewV4().String(), FullName:"Hue Jackman", Region:"US"}
+    c1 := Crew{Id:uuid.NewV4().String(), FullName:"Tom Cruse", Region:"US"}
+    c2 := Crew{Id:uuid.NewV4().String(), FullName:"Hue Jackman", Region:"US"}
     n, e := sess.Query(MovieCrew).Insert(&c1, &c2)
     if nil != e {
         t.Fatal("Insert failed:> ", e)
