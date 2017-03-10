@@ -2,7 +2,7 @@ package xql
 
 import (
     "errors"
-    log "github.com/Sirupsen/logrus"
+    //log "github.com/Sirupsen/logrus"
     "reflect"
     "database/sql"
 )
