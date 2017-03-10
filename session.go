@@ -11,6 +11,7 @@ type Session struct {
     driverName string
     db *sql.DB
     tx *sql.Tx
+    verbose bool
 }
 
 func (self *Session) getStatementBuilder() StatementBuilder {
@@ -20,6 +21,12 @@ func (self *Session) getStatementBuilder() StatementBuilder {
         panic(fmt.Sprintf("Statement Builder '%s' not registered! ", self.driverName))
     }
     return nil
+}
+
+func (self *Session) Close() {
+    if self.tx != nil {
+        self.tx.Commit()
+    }
 }
 
 func (self *Session) Query(table *Table, columns ...interface{}) *QuerySet {
@@ -81,10 +88,10 @@ func (self *Session) Rollback() error {
 
 func (self *Session) doExec(query string, args ...interface{}) (sql.Result, error) {
     if self.tx != nil {
-        log.Debugln("doExec in Tx: ", query, args)
+        if self.verbose { log.Debugln("doExec in Tx: ", query, args) }
         return self.tx.Exec(query, args...)
     }else{
-        log.Debugln("doExec in DB: ", query, args)
+        if self.verbose { log.Debugln("doExec in DB: ", query, args) }
         return self.db.Exec(query, args...)
     }
     return nil, nil
@@ -92,10 +99,10 @@ func (self *Session) doExec(query string, args ...interface{}) (sql.Result, erro
 
 func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, error) {
     if self.tx != nil {
-        log.Debugln("doQuery in Tx: ", query, args)
+        if self.verbose { log.Debugln("doQuery in Tx: ", query, args) }
         return self.tx.Query(query, args...)
     }else{
-        log.Debugln("doQuery in DB: ", query, args)
+        if self.verbose { log.Debugln("doQuery in DB: ", query, args) }
         return self.db.Query(query, args...)
     }
     return nil, nil
@@ -103,10 +110,10 @@ func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, erro
 
 func (self *Session) doQueryRow(query string, args ...interface{}) *sql.Row {
     if self.tx != nil {
-        log.Debugln("doQueryRow in Tx: ", query, args)
+        if self.verbose { log.Debugln("doQueryRow in Tx: ", query, args) }
         return self.tx.QueryRow(query, args...)
     }else{
-        log.Debugln("doQueryRow in Db: ", query, args)
+        if self.verbose { log.Debugln("doQueryRow in Db: ", query, args) }
         return self.db.QueryRow(query, args...)
     }
     return nil
