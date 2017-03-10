@@ -254,8 +254,8 @@ func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
         }
     }
     for _, obj := range objs {
-        log.Debugln("reflect.TypeOf(obj)>", reflect.TypeOf(obj))
-        log.Debugln("reflect.TypeOf(self.table.Entity)>", reflect.TypeOf(self.table.Entity))
+        //log.Debugln("reflect.TypeOf(obj)>", reflect.TypeOf(obj))
+        //log.Debugln("reflect.TypeOf(self.table.Entity)>", reflect.TypeOf(self.table.Entity))
         if reflect.TypeOf(obj) != reflect.TypeOf(self.table.Entity) {
            return 0, errors.New("Invalid data type.")
         }
