@@ -176,6 +176,11 @@ func (self *QuerySet) Count(cols...string) (int64,error) {
 }
 
 func (self *QuerySet) All() (*XRows, error) {
+    if len(self.queries) < 1 {
+        for _, col := range self.table.Columns {
+            self.queries = append(self.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
+        }
+    }
     s, args, err := self.session.getStatementBuilder().Select(self.table, self.queries,
         self.filters, self.orders, self.offset, self.limit)
     if nil != err {
@@ -191,6 +196,11 @@ func (self *QuerySet) All() (*XRows, error) {
 
 
 func (self *QuerySet) One() *XRow {
+    if len(self.queries) < 1 {
+        for _, col := range self.table.Columns {
+            self.queries = append(self.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
+        }
+    }
     s, args, err := self.session.getStatementBuilder().Select(self.table, self.queries,
         self.filters, self.orders, self.offset, 1)
     if nil != err {

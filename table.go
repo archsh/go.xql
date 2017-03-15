@@ -22,6 +22,7 @@ type Column struct {
     Unique bool
     Nullable bool
     Indexed bool
+    Auto bool
     PrimaryKey bool
 }
 
@@ -59,6 +60,8 @@ func DeclareTable(name string, entity interface{}, schema ...string) *Table {
                         c.Nullable = true
                     case "unique":
                         c.Unique = true
+                    case "auto":
+                        c.Auto = true
                     }
                 }
             }

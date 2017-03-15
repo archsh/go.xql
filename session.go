@@ -48,9 +48,9 @@ func (self *Session) Query(table *Table, columns ...interface{}) *QuerySet {
 
         }
     }else{
-        for _, col := range qs.table.Columns {
-            qs.queries = append(qs.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
-        }
+        //for _, col := range qs.table.Columns {
+        //    qs.queries = append(qs.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
+        //}
     }
     return qs
 }

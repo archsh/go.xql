@@ -84,6 +84,7 @@ func (pb PostgresBuilder) Insert(t *xql.Table, obj interface{}, col...string) (s
             if ! ok {
                 continue
             }
+            //fmt.Println("POSTGRES Insert>1>>>",n,v.Auto,v.PrimaryKey,v)
             i += 1
             cols = append(cols, n)
             vals = append(vals, fmt.Sprintf("$%d", i))
@@ -92,6 +93,10 @@ func (pb PostgresBuilder) Insert(t *xql.Table, obj interface{}, col...string) (s
         }
     }else{
         for k, v := range t.Columns {
+            //fmt.Println("POSTGRES Insert>2>>>",k,v.Auto,v.PrimaryKey,v)
+            if v.Auto {
+                continue
+            }
             i += 1
             cols = append(cols, k)
             vals = append(vals, fmt.Sprintf("$%d", i))
