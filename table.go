@@ -1,9 +1,9 @@
 package xql
 
 import (
-    //"fmt"
     "reflect"
     "strings"
+    //"fmt"
 )
 
 type Table struct {
@@ -27,18 +27,47 @@ type Column struct {
     PrimaryKey bool
 }
 
-func _make_columns(entity interface{}) (cols []Column) {
+func _in_slice(a string, ls []string) bool {
+    for _, s := range ls {
+        if a == s {
+            return true
+        }
+    }
+    return false
+}
+
+func _get_skips(tags []string) (skips []string) {
+    if nil == tags || len(tags) < 1 {
+        return
+    }
+    for _, tag := range tags {
+        if strings.HasPrefix(tag, "skips:") {
+            s := strings.TrimLeft(tag, "skips:")
+            for _, n := range strings.Split(s, ";"){
+                if n != "" {
+                    skips = append(skips, n)
+                }
+            }
+            return
+        }
+    }
+    return
+}
+
+func _make_columns(entity interface{}, skips ...string) (cols []Column) {
     if nil != entity {
         et := reflect.TypeOf(entity)
         ev := reflect.ValueOf(entity)
         for i:=0; i< et.Elem().NumField(); i++ {
             f := et.Elem().Field(i)
-            //f.Name
+            if _in_slice(f.Name, skips) {
+                continue
+            }
             x_tags := strings.Split(f.Tag.Get("xql"),",")
             if f.Anonymous  {
-                //fmt.Println("_make_columns:>", f.Name, "is Anonymous!", ev.Elem().Field(i))
                 if x_tags[0] != "-" {
-                    for _, c := range _make_columns(ev.Elem().Field(i).Addr().Interface()) {
+                    sks := _get_skips(x_tags)
+                    for _, c := range _make_columns(ev.Elem().Field(i).Addr().Interface(),sks...) {
                         cols = append(cols, c)
                     }
                 }else{
