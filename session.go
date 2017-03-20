@@ -38,7 +38,7 @@ func (self *Session) Query(table *Table, columns ...interface{}) *QuerySet {
                 qs.queries = append(qs.queries, qc)
             }else if qcn, ok := c.(string); ok {
                 if col, ok := qs.table.Columns[qcn]; !ok {
-                    panic("Invalid column name.")
+                    panic("Invalid column name:"+qcn)
                 }else{
                     qs.queries = append(qs.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
                 }
