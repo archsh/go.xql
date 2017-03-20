@@ -19,6 +19,7 @@ type QueryFilter struct {
     Reversed  bool          // Reversed Field and Value if it is true
     Field     string
     Operator  string        // Value will not used if empty.
+    Function  string
     Value     interface{}
 }
 

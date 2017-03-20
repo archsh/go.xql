@@ -42,11 +42,21 @@ func (pb PostgresBuilder) Select(t *xql.Table, cols []xql.QueryColumn, filters [
             s = fmt.Sprintf(`%s %s %s`, s, cause, f.Field)
         } else if f.Reversed {
             n += 1
-            s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, f.Field)
+            if f.Function != "" {
+                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, f.Field)
+            }else{
+                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, f.Field)
+            }
+
             args = append(args, f.Value)
         } else {
             n += 1
-            s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, f.Field, f.Operator, n)
+            if f.Function != "" {
+                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
+            }else{
+                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, f.Field, f.Operator, n)
+            }
+
             args = append(args, f.Value)
         }
     }

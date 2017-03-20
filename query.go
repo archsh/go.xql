@@ -128,8 +128,12 @@ func (self *QuerySet) Filter(cons ...interface{}) *QuerySet {
                     Operator: "=",
                 })
             }
+        }else if vf, ok := con.(*QueryFilter); ok {
+            self.filters = append(self.filters, *vf)
         }else if vf, ok := con.(QueryFilter); ok {
             self.filters = append(self.filters, vf)
+        }else{
+            panic("Unknow Filter!")
         }
     }
     return self
@@ -141,6 +145,8 @@ func (self *QuerySet) OrderBy(orders ...interface{}) *QuerySet {
         case string:
             qo := makeQueryOrder(self.table, x.(string))
             self.orders = append(self.orders, qo)
+        case *QueryOrder:
+            self.orders = append(self.orders, *x.(*QueryOrder))
         case QueryOrder:
             self.orders = append(self.orders, x.(QueryOrder))
         default:
