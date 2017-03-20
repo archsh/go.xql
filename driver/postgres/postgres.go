@@ -72,8 +72,12 @@ func (pb PostgresBuilder) Select(t *xql.Table, cols []xql.QueryColumn, filters [
     if len(s_orders) > 0 {
         s = fmt.Sprintf(`%s ORDER BY %s`, s, strings.Join(s_orders, ","))
     }
-    if offset >= 0 && limit >= 0 {
-        s = fmt.Sprintf(`%s OFFSET %d LIMIT %d`, s, offset, limit)
+    if offset >= 0 {
+        s = fmt.Sprintf(`%s OFFSET %d`, s, offset)
+    }
+
+    if limit >= 0 {
+        s = fmt.Sprintf(`%s LIMIT %d`, s, limit)
     }
     return
 }
