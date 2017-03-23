@@ -10,21 +10,23 @@ type Table struct {
     TableName string
     Schema string
     Entity interface{}
-    Columns map[string]Column
+    Columns map[string]*Column
     PrimaryKey []string
+    columns_by_jtag map[string]*Column
 
 }
 
 type Column struct {
-    FieldName string
+    FieldName    string
     PropertyName string
-    Type string
-    Length uint16
-    Unique bool
-    Nullable bool
-    Indexed bool
-    Auto bool
-    PrimaryKey bool
+    JTAG         string
+    Type         string
+    Length       uint16
+    Unique       bool
+    Nullable     bool
+    Indexed      bool
+    Auto         bool
+    PrimaryKey   bool
 }
 
 func _in_slice(a string, ls []string) bool {
@@ -54,7 +56,7 @@ func _get_skips(tags []string) (skips []string) {
     return
 }
 
-func _make_columns(entity interface{}, skips ...string) (cols []Column) {
+func _make_columns(entity interface{}, skips ...string) (cols []*Column) {
     if nil != entity {
         et := reflect.TypeOf(entity)
         ev := reflect.ValueOf(entity)
@@ -75,18 +77,23 @@ func _make_columns(entity interface{}, skips ...string) (cols []Column) {
                 }
                 continue
             }
-            c := Column{PropertyName:f.Name}
-            if len(x_tags) < 1 || x_tags[0]=="" {
+            c := &Column{PropertyName:f.Name}
+            if len(x_tags) < 1 {
                 c.FieldName = Camel2Underscore(f.Name)
             }else if x_tags[0] == "-" {
                 continue
+            }
+            if x_tags[0]=="" {
+                c.FieldName = Camel2Underscore(f.Name)
             }else{
                 c.FieldName = x_tags[0]
+            }
+            if len(x_tags) > 1 {
                 for _, x := range x_tags[1:] {
                     switch x {
                     case "pk":
                         c.PrimaryKey = true
-                        //t.PrimaryKey = append(t.PrimaryKey, x)
+                    //t.PrimaryKey = append(t.PrimaryKey, x)
                     case "indexed":
                         c.Indexed = true
                     case "nullable":
@@ -98,6 +105,16 @@ func _make_columns(entity interface{}, skips ...string) (cols []Column) {
                     }
                 }
             }
+            json_tags := strings.Split(f.Tag.Get("json"),",")
+            if len(json_tags) < 1 {
+                c.JTAG = c.PropertyName
+            }else if json_tags[0] != "-" {
+                if json_tags[0] == "" {
+                    c.JTAG = c.PropertyName
+                }else{
+                    c.JTAG = json_tags[0]
+                }
+            }
             cols = append(cols, c)
             //t.Columns[c.FieldName] = c
         }
@@ -106,11 +123,11 @@ func _make_columns(entity interface{}, skips ...string) (cols []Column) {
 }
 
 func DeclareTable(name string, entity interface{}, schema ...string) *Table {
-
     t := &Table{
         TableName:name,
         Entity: entity,
-        Columns: make(map[string]Column),
+        Columns: make(map[string]*Column),
+        columns_by_jtag: make(map[string]*Column),
     }
     if len(schema) > 0 {
         t.Schema = schema[0]
@@ -118,10 +135,23 @@ func DeclareTable(name string, entity interface{}, schema ...string) *Table {
     if nil != entity {
         for _, c := range _make_columns(entity) {
             t.Columns[c.FieldName] = c
+            if c.JTAG != "" {
+                t.columns_by_jtag[c.JTAG] = c
+            }
             if c.PrimaryKey {
                 t.PrimaryKey = append(t.PrimaryKey, c.FieldName)
             }
         }
     }
     return t
+}
+
+func (t *Table) GetColumn(name string) (*Column, bool) {
+    if c, ok := t.Columns[name]; ok {
+        return c, true
+    }
+    if c, ok := t.columns_by_jtag[name]; ok {
+        return c, true
+    }
+    return nil, false
 }
