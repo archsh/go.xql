@@ -56,7 +56,7 @@ func _get_skips(tags []string) (skips []string) {
     return
 }
 
-func _make_columns(entity interface{}, skips ...string) (cols []*Column) {
+func _make_columns(entity interface{}, recursive bool, skips ...string) (cols []*Column) {
     if nil != entity {
         et := reflect.TypeOf(entity)
         ev := reflect.ValueOf(entity)
@@ -66,10 +66,10 @@ func _make_columns(entity interface{}, skips ...string) (cols []*Column) {
                 continue
             }
             x_tags := strings.Split(f.Tag.Get("xql"),",")
-            if f.Anonymous  {
+            if f.Anonymous && ! recursive {
                 if x_tags[0] != "-" {
                     sks := _get_skips(x_tags)
-                    for _, c := range _make_columns(ev.Elem().Field(i).Addr().Interface(),sks...) {
+                    for _, c := range _make_columns(ev.Elem().Field(i).Addr().Interface(),true, sks...) {
                         cols = append(cols, c)
                     }
                 }else{
@@ -133,7 +133,7 @@ func DeclareTable(name string, entity interface{}, schema ...string) *Table {
         t.Schema = schema[0]
     }
     if nil != entity {
-        for _, c := range _make_columns(entity) {
+        for _, c := range _make_columns(entity, false) {
             t.Columns[c.FieldName] = c
             if c.JTAG != "" {
                 t.columns_by_jtag[c.JTAG] = c
