@@ -14,11 +14,11 @@ type Session struct {
     verbose bool
 }
 
-func (self *Session) getStatementBuilder() StatementBuilder {
-    if s, ok := _statement_builders[self.driverName]; ok {
+func (self *Session) getDialect() IDialect {
+    if s, ok := _builtin_dialects[self.driverName]; ok {
         return s
     }else{
-        panic(fmt.Sprintf("Statement Builder '%s' not registered! ", self.driverName))
+        panic(fmt.Sprintf("Dialect '%s' not registered! ", self.driverName))
     }
     return nil
 }

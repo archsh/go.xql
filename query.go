@@ -167,7 +167,7 @@ func (self *QuerySet) Limit(limit int64) *QuerySet {
 }
 
 func (self *QuerySet) Count(cols...string) (int64,error) {
-    s, args, err := self.session.getStatementBuilder().Select(self.table,
+    s, args, err := self.session.getDialect().Select(self.table,
         []QueryColumn{{Function:"COUNT", FieldName:"*"}},
         self.filters, nil, -1, -1)
     if nil != err {
@@ -187,7 +187,7 @@ func (self *QuerySet) All() (*XRows, error) {
             self.queries = append(self.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
         }
     }
-    s, args, err := self.session.getStatementBuilder().Select(self.table, self.queries,
+    s, args, err := self.session.getDialect().Select(self.table, self.queries,
         self.filters, self.orders, self.offset, self.limit)
     if nil != err {
         return nil, err
@@ -207,7 +207,7 @@ func (self *QuerySet) One() *XRow {
             self.queries = append(self.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
         }
     }
-    s, args, err := self.session.getStatementBuilder().Select(self.table, self.queries,
+    s, args, err := self.session.getDialect().Select(self.table, self.queries,
         self.filters, self.orders, self.offset, 1)
     if nil != err {
         return nil
@@ -227,7 +227,7 @@ func (self *QuerySet) Update(vals interface{}) (int64, error) {
     }else if cx, ok := vals.([]UpdateColumn); ok {
         cols = cx
     }
-    s, args, err := self.session.getStatementBuilder().Update(self.table, self.filters, cols...)
+    s, args, err := self.session.getDialect().Update(self.table, self.filters, cols...)
     if nil != err {
         return 0, err
     }
@@ -243,7 +243,7 @@ func (self *QuerySet) Update(vals interface{}) (int64, error) {
 }
 
 func (self *QuerySet) Delete() (int64, error) {
-    s, args, err := self.session.getStatementBuilder().Delete(self.table, self.filters)
+    s, args, err := self.session.getDialect().Delete(self.table, self.filters)
     if nil != err {
         return 0, err
     }
@@ -275,7 +275,7 @@ func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
         if reflect.TypeOf(obj) != reflect.TypeOf(self.table.Entity) {
            return 0, errors.New("Invalid data type.")
         }
-        s, args, err := self.session.getStatementBuilder().Insert(self.table, obj, cols...)
+        s, args, err := self.session.getDialect().Insert(self.table, obj, cols...)
         if nil != err {
             return 0, err
         }

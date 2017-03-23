@@ -6,17 +6,17 @@ import (
     "strings"
 )
 
-type PostgresBuilder struct {
+type PostgresDialect struct {
 
 
 }
 
-func (pb PostgresBuilder) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
     return
 }
 
 
-func (pb PostgresBuilder) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, offset int64, limit int64)  (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, offset int64, limit int64)  (s string, args []interface{}, err error) {
     var colnames []string
     for _,x := range cols {
         colnames = append(colnames, x.String())
@@ -82,7 +82,7 @@ func (pb PostgresBuilder) Select(t *xql.Table, cols []xql.QueryColumn, filters [
     return
 }
 
-func (pb PostgresBuilder) Insert(t *xql.Table, obj interface{}, col...string) (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col...string) (s string, args []interface{}, err error) {
     s = "INSERT INTO "
     if t.Schema != "" {
         s += t.Schema+"."
@@ -123,7 +123,7 @@ func (pb PostgresBuilder) Insert(t *xql.Table, obj interface{}, col...string) (s
     return
 }
 
-func (pb PostgresBuilder) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
     s = "UPDATE "
     if t.Schema != "" {
         s += t.Schema+"."
@@ -168,7 +168,7 @@ func (pb PostgresBuilder) Update(t *xql.Table, filters []xql.QueryFilter, cols .
     return
 }
 
-func (pb PostgresBuilder) Delete(t *xql.Table, filters []xql.QueryFilter) (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s string, args []interface{}, err error) {
     s = "DELETE FROM "
     if t.Schema != "" {
         s += t.Schema+"."
@@ -202,5 +202,5 @@ func (pb PostgresBuilder) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
 }
 
 func init() {
-    xql.RegisterBuilder("postgres", &PostgresBuilder{})
+    xql.RegisterDialect("postgres", &PostgresDialect{})
 }

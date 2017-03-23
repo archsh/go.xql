@@ -5,7 +5,7 @@ import (
     "time"
     _ "github.com/lib/pq"
     "github.com/archsh/go.uuid"
-    _ "github.com/archsh/go.xql/driver/postgres"
+    _ "github.com/archsh/go.xql/dialects/postgres"
 
 )
 

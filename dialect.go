@@ -4,7 +4,7 @@ import (
     "database/sql"
 )
 
-type StatementBuilder interface {
+type IDialect interface {
     Create(*Table, ...interface{}) (string, []interface{}, error)
     Select(*Table, []QueryColumn, []QueryFilter, []QueryOrder, int64, int64) (string, []interface{}, error)
     Insert(*Table, interface{}, ...string) (string, []interface{}, error)
@@ -13,14 +13,14 @@ type StatementBuilder interface {
 }
 
 
-var _statement_builders map[string]StatementBuilder
+var _builtin_dialects map[string]IDialect
 
 func init() {
-    _statement_builders = make(map[string]StatementBuilder)
+    _builtin_dialects = make(map[string]IDialect)
 }
 
-func RegisterBuilder(name string, d StatementBuilder) {
-    _statement_builders[name] = d
+func RegisterDialect(name string, d IDialect) {
+    _builtin_dialects[name] = d
 }
 
 type Engine struct {
