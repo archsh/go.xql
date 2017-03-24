@@ -134,11 +134,15 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
     }
     var n int
     for i, uc := range cols {
-        if i == 0 {
-            s = s + " SET "
-        }
         n += 1
-        s = fmt.Sprintf(`%s "%s"=$%d`,s, uc.Field, n)
+        if i == 0 {
+            //s = s + " SET "
+            s = fmt.Sprintf(`%s SET %s=$%d`,s, uc.Field, n)
+        }else{
+            s = fmt.Sprintf(`%s, %s=$%d`,s, uc.Field, n)
+        }
+
+
         args = append(args, uc.Value)
     }
 

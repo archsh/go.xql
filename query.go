@@ -221,7 +221,15 @@ func (self *QuerySet) Update(vals interface{}) (int64, error) {
     cols := []UpdateColumn{}
     if cm, ok := vals.(map[string]interface{}); ok {
         for k, v := range cm {
-            uc := UpdateColumn{Field:k, Value:v, Operator:"="}
+            var fk string
+            if c, ok := self.table.Columns[k]; ok {
+                fk = c.FieldName
+            }else if c, ok := self.table.columns_by_jtag[k]; ok {
+                fk = c.FieldName
+            }else{
+                return 0, errors.New("Invalid column:"+k)
+            }
+            uc := UpdateColumn{Field:fk, Value:v, Operator:"="}
             cols = append(cols, uc)
         }
     }else if cx, ok := vals.([]UpdateColumn); ok {
