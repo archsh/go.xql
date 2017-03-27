@@ -62,6 +62,7 @@ func _make_columns(entity interface{}, recursive bool, skips ...string) (cols []
         ev := reflect.ValueOf(entity)
         for i:=0; i< et.Elem().NumField(); i++ {
             f := et.Elem().Field(i)
+            //fv := et.Elem().Field(i)
             if _in_slice(f.Name, skips) {
                 continue
             }
@@ -102,6 +103,14 @@ func _make_columns(entity interface{}, recursive bool, skips ...string) (cols []
                         c.Unique = true
                     case "auto":
                         c.Auto = true
+                    default:
+                        xs := strings.Split(x, "=")
+                        if len(xs) > 1 {
+                            switch xs[0] {
+                            case "type":
+                                c.Type = xs[1]
+                            }
+                        }
                     }
                 }
             }
@@ -113,6 +122,22 @@ func _make_columns(entity interface{}, recursive bool, skips ...string) (cols []
                     c.JTAG = c.PropertyName
                 }else{
                     c.JTAG = json_tags[0]
+                }
+            }
+            if c.Type == "" {
+                switch f.Type.Kind() {
+                case reflect.String:
+                    c.Type = "VARCHAR(32)"
+                case reflect.Int16, reflect.Uint16:
+                    c.Type = "SMALLINT"
+                case reflect.Int, reflect.Int32, reflect.Uint, reflect.Uint32:
+                    c.Type = "INTEGER"
+                case reflect.Int64,reflect.Uint64:
+                    c.Type = "BIGINT"
+                case reflect.Bool:
+                    c.Type = "BOOLEAN"
+                case reflect.Float32, reflect.Float64:
+                    c.Type = "FLOAT"
                 }
             }
             cols = append(cols, c)

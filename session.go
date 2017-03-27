@@ -23,6 +23,22 @@ func (self *Session) getDialect() IDialect {
     return nil
 }
 
+func (self *Session) Create(table *Table) error {
+    dialect := self.getDialect()
+    s, args, e := dialect.Create(table)
+    if nil != e {
+        return e
+    }
+    log.Debugln("SQL:>>>", s)
+    if _, e := self.db.Exec(s, args...); nil != e {
+        return e
+    }else{
+        return nil
+    }
+    //log.Debugln("SQL:>>>", s)
+    //return e
+}
+
 func (self *Session) Close() {
     if self.tx != nil {
         self.tx.Commit()

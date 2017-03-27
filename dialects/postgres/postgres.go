@@ -4,6 +4,7 @@ import (
     "fmt"
     "reflect"
     "strings"
+    "errors"
 )
 
 type PostgresDialect struct {
@@ -11,8 +12,93 @@ type PostgresDialect struct {
 
 }
 
+/*
+-- Table: metas_vod_albums
+
+-- DROP TABLE metas_vod_albums;
+
+CREATE TABLE metas_vod_albums
+(
+  id uuid NOT NULL,
+  album_name character varying(256) NOT NULL,
+  idx integer NOT NULL,
+  is_series boolean NOT NULL,
+  film_total integer NOT NULL,
+  film_count integer NOT NULL,
+  remark character varying(256) NOT NULL,
+  issue_date date NOT NULL,
+  publish_time timestamp without time zone NOT NULL,
+  score numeric(3,1) NOT NULL,
+  content_rating character varying(16),
+  album_pic character varying(256) NOT NULL,
+  imdb_id character varying(24),
+  cp_ref_id character varying(64),
+  description text NOT NULL,
+  status smallint NOT NULL,
+  created timestamp without time zone NOT NULL,
+  updated timestamp without time zone NOT NULL,
+  provider_id uuid NOT NULL,
+  alias character varying(256) NOT NULL,
+  CONSTRAINT metas_vod_albums_pkey PRIMARY KEY (id),
+  CONSTRAINT metas_vod_albums_provider_id_fkey FOREIGN KEY (provider_id)
+      REFERENCES metas_providers (id) MATCH SIMPLE
+      ON UPDATE CASCADE ON DELETE CASCADE
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE metas_vod_albums
+  OWNER TO postgres;
+
+-- Index: ix_public_metas_vod_albums_album_name
+
+-- DROP INDEX ix_public_metas_vod_albums_album_name;
+
+CREATE INDEX ix_public_metas_vod_albums_album_name
+  ON metas_vod_albums
+  USING btree
+  (album_name COLLATE pg_catalog."default");
+
+-- Index: ix_public_metas_vod_albums_idx
+
+-- DROP INDEX ix_public_metas_vod_albums_idx;
+
+CREATE INDEX ix_public_metas_vod_albums_idx
+  ON metas_vod_albums
+  USING btree
+  (idx);
+ */
+
 func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
-    return
+    var createSQL string
+    if t.Schema != "" {
+        createSQL = "CREATE TABLE IF NOT EXISTS " + t.Schema+"."+t.TableName + " ( "
+    }else{
+        createSQL = "CREATE TABLE IF NOT EXISTS " + t.TableName + " ( "
+    }
+    var indexes []string
+    var cols []string
+    for k, c := range t.Columns {
+        if c.Type == "" {
+            return "", args, errors.New("Unknow Column Type!!!")
+        }
+        col_str := fmt.Sprintf(`"%s" %s`, k, c.Type)
+        if ! c.Nullable {
+            col_str = fmt.Sprintf(`%s NOT NULL`, col_str)
+        }
+        cols = append(cols, col_str)
+        if c.Indexed {
+            idxs := fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_%s_%s ON %s USING btree (%s);",
+                t.TableName, c.FieldName, t.TableName, c.FieldName)
+            indexes = append(indexes, idxs)
+        }
+    }
+    if len(t.PrimaryKey) > 0 {
+        cols = append(cols, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", t.TableName, strings.Join(t.PrimaryKey, ",")))
+    }
+    createSQL =  createSQL + strings.Join(cols, ",") + " );"
+    s = strings.Join(append([]string{createSQL}, indexes...), "\n")
+    return s, args, err
 }
 
 
