@@ -78,11 +78,11 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
     }
     var indexes []string
     var cols []string
-    for k, c := range t.Columns {
+    for _, c := range t.ListedColumns {
         if c.Type == "" {
             return "", args, errors.New("Unknow Column Type!!!")
         }
-        col_str := fmt.Sprintf(`"%s" %s`, k, c.Type)
+        col_str := fmt.Sprintf(`"%s" %s`, c.FieldName, c.Type)
         if ! c.Nullable {
             col_str = fmt.Sprintf(`%s NOT NULL`, col_str)
         }
@@ -180,7 +180,7 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col...string) (s
     r := reflect.ValueOf(obj)
     if len(col) > 0 {
         for _, n := range col {
-            v, ok := t.Columns[n]
+            v, ok := t.MappedColumns[n]
             if ! ok {
                 continue
             }
@@ -192,7 +192,7 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col...string) (s
             args = append(args, fv)
         }
     }else{
-        for k, v := range t.Columns {
+        for k, v := range t.MappedColumns {
             //fmt.Println("POSTGRES Insert>2>>>",k,v.Auto,v.PrimaryKey,v)
             if v.Auto {
                 continue
@@ -216,7 +216,7 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
     }
     s += t.TableName
     if len(cols) < 1 {
-        panic("Empty Update Columns!!!")
+        panic("Empty Update MappedColumns!!!")
     }
     var n int
     for i, uc := range cols {

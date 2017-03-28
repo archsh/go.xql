@@ -7,12 +7,14 @@ import (
 )
 
 type Table struct {
-    TableName string
-    Schema string
-    Entity interface{}
-    Columns map[string]*Column
-    PrimaryKey []string
-    columns_by_jtag map[string]*Column
+    TableName      string
+    Schema         string
+    Entity         interface{}
+    MappedColumns  map[string]*Column
+    ListedColumns  []*Column
+    PrimaryKey     []string
+    JTaggedColumns map[string]*Column
+
 
 }
 
@@ -141,7 +143,7 @@ func _make_columns(entity interface{}, recursive bool, skips ...string) (cols []
                 }
             }
             cols = append(cols, c)
-            //t.Columns[c.FieldName] = c
+            //t.MappedColumns[c.FieldName] = c
         }
     }
     return cols
@@ -149,19 +151,20 @@ func _make_columns(entity interface{}, recursive bool, skips ...string) (cols []
 
 func DeclareTable(name string, entity interface{}, schema ...string) *Table {
     t := &Table{
-        TableName:name,
-        Entity: entity,
-        Columns: make(map[string]*Column),
-        columns_by_jtag: make(map[string]*Column),
+        TableName:      name,
+        Entity:         entity,
+        MappedColumns:  make(map[string]*Column),
+        JTaggedColumns: make(map[string]*Column),
     }
     if len(schema) > 0 {
         t.Schema = schema[0]
     }
     if nil != entity {
         for _, c := range _make_columns(entity, false) {
-            t.Columns[c.FieldName] = c
+            t.MappedColumns[c.FieldName] = c
+            t.ListedColumns = append(t.ListedColumns, c)
             if c.JTAG != "" {
-                t.columns_by_jtag[c.JTAG] = c
+                t.JTaggedColumns[c.JTAG] = c
             }
             if c.PrimaryKey {
                 t.PrimaryKey = append(t.PrimaryKey, c.FieldName)
@@ -172,10 +175,10 @@ func DeclareTable(name string, entity interface{}, schema ...string) *Table {
 }
 
 func (t *Table) GetColumn(name string) (*Column, bool) {
-    if c, ok := t.Columns[name]; ok {
+    if c, ok := t.MappedColumns[name]; ok {
         return c, true
     }
-    if c, ok := t.columns_by_jtag[name]; ok {
+    if c, ok := t.JTaggedColumns[name]; ok {
         return c, true
     }
     return nil, false

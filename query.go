@@ -51,7 +51,7 @@ func (self *XRow) Scan(dest ...interface{}) error {
             var outputs []interface{}
             r := reflect.ValueOf(d)
             for _, qc := range self.qs.queries {
-                c, _ := self.qs.table.Columns[qc.FieldName]
+                c, _ := self.qs.table.MappedColumns[qc.FieldName]
                 vp := r.Elem().FieldByName(c.PropertyName).Addr().Interface()
                 outputs = append(outputs, vp)
             }
@@ -79,7 +79,7 @@ func (self *XRows) Scan(dest ...interface{}) error {
             var outputs []interface{}
             r := reflect.ValueOf(d)
             for _, qc := range self.qs.queries {
-                c, _ := self.qs.table.Columns[qc.FieldName]
+                c, _ := self.qs.table.MappedColumns[qc.FieldName]
                 vp := r.Elem().FieldByName(c.PropertyName).Addr().Interface()
                 outputs = append(outputs, vp)
             }
@@ -183,7 +183,7 @@ func (self *QuerySet) Count(cols...string) (int64,error) {
 
 func (self *QuerySet) All() (*XRows, error) {
     if len(self.queries) < 1 {
-        for _, col := range self.table.Columns {
+        for _, col := range self.table.MappedColumns {
             self.queries = append(self.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
         }
     }
@@ -203,7 +203,7 @@ func (self *QuerySet) All() (*XRows, error) {
 
 func (self *QuerySet) One() *XRow {
     if len(self.queries) < 1 {
-        for _, col := range self.table.Columns {
+        for _, col := range self.table.MappedColumns {
             self.queries = append(self.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
         }
     }
@@ -222,9 +222,9 @@ func (self *QuerySet) Update(vals interface{}) (int64, error) {
     if cm, ok := vals.(map[string]interface{}); ok {
         for k, v := range cm {
             var fk string
-            if c, ok := self.table.Columns[k]; ok {
+            if c, ok := self.table.MappedColumns[k]; ok {
                 fk = c.FieldName
-            }else if c, ok := self.table.columns_by_jtag[k]; ok {
+            }else if c, ok := self.table.JTaggedColumns[k]; ok {
                 fk = c.FieldName
             }else{
                 return 0, errors.New("Invalid column:"+k)
