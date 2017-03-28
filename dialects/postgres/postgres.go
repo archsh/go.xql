@@ -198,7 +198,7 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col...string) (s
                 continue
             }
             i += 1
-            cols = append(cols, k)
+            cols = append(cols, fmt.Sprintf(`"%s"`,k))
             vals = append(vals, fmt.Sprintf("$%d", i))
             fv := reflect.Indirect(r).FieldByName(v.PropertyName).Interface()
             args = append(args, fv)
@@ -223,9 +223,9 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
         n += 1
         if i == 0 {
             //s = s + " SET "
-            s = fmt.Sprintf(`%s SET %s=$%d`,s, uc.Field, n)
+            s = fmt.Sprintf(`%s SET "%s"=$%d`,s, uc.Field, n)
         }else{
-            s = fmt.Sprintf(`%s, %s=$%d`,s, uc.Field, n)
+            s = fmt.Sprintf(`%s, "%s"=$%d`,s, uc.Field, n)
         }
 
 
