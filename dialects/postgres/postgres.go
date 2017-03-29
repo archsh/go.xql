@@ -71,11 +71,11 @@ CREATE INDEX ix_public_metas_vod_albums_idx
 
 func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
     var createSQL string
+    var table_name string = t.TableName
     if t.Schema != "" {
-        createSQL = "CREATE TABLE IF NOT EXISTS " + t.Schema+"."+t.TableName + " ( "
-    }else{
-        createSQL = "CREATE TABLE IF NOT EXISTS " + t.TableName + " ( "
+        table_name = t.Schema + "." + table_name
     }
+    createSQL = "CREATE TABLE IF NOT EXISTS " + table_name + " ( "
     var indexes []string
     var cols []string
     for _, c := range t.ListedColumns {
@@ -89,14 +89,14 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
         cols = append(cols, col_str)
         if c.Indexed {
             idxs := fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_%s_%s ON %s USING btree (%s);",
-                t.TableName, c.FieldName, t.TableName, c.FieldName)
+                t.TableName, c.FieldName, table_name, c.FieldName)
             indexes = append(indexes, idxs)
         }
     }
     if len(t.PrimaryKey) > 0 {
         cols = append(cols, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", t.TableName, strings.Join(t.PrimaryKey, ",")))
     }
-    createSQL =  createSQL + strings.Join(cols, ",") + " );"
+    createSQL =  createSQL + strings.Join(cols, ", ") + " );"
     s = strings.Join(append([]string{createSQL}, indexes...), "\n")
     return s, args, err
 }
