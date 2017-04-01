@@ -5,6 +5,7 @@ import (
     //log "github.com/Sirupsen/logrus"
     "reflect"
     "database/sql"
+    "fmt"
 )
 
 
@@ -12,9 +13,9 @@ import (
 func (qc QueryColumn) String(as...bool) string {
     s := ""
     if qc.Function != "" {
-        s = qc.Function+"("+qc.FieldName+")"
+        s = fmt.Sprintf(`%s("%s")`, qc.Function, qc.FieldName) //qc.Function+"("+qc.FieldName+")"
     }else{
-        s = qc.FieldName
+        s = fmt.Sprintf(`"%s"`, qc.FieldName)
     }
     if qc.Alias != "" && len(as)>0 && as[0] {
         s = s + " AS " + qc.Alias
@@ -167,8 +168,16 @@ func (self *QuerySet) Limit(limit int64) *QuerySet {
 }
 
 func (self *QuerySet) Count(cols...string) (int64,error) {
+    var fieldname string
+    if len(cols) > 0 {
+        fieldname = cols[0]
+    }else if len(self.table.PrimaryKey) > 0 {
+        fieldname = self.table.PrimaryKey[0]
+    }else{
+        fieldname = self.table.ListedColumns[0].FieldName
+    }
     s, args, err := self.session.getDialect().Select(self.table,
-        []QueryColumn{{Function:"COUNT", FieldName:"*"}},
+        []QueryColumn{{Function:"COUNT", FieldName:fieldname}},
         self.filters, nil, -1, -1)
     if nil != err {
         return 0, err
