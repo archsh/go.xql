@@ -18,20 +18,6 @@ type Table struct {
 	JTaggedColumns map[string]*Column
 }
 
-// Column ...
-// Struct defined for a column object
-type Column struct {
-	FieldName    string
-	PropertyName string
-	JTAG         string
-	Type         string
-	Length       uint16
-	Unique       bool
-	Nullable     bool
-	Indexed      bool
-	Auto         bool
-	PrimaryKey   bool
-}
 
 func inSlice(a string, ls []string) bool {
 	for _, s := range ls {
