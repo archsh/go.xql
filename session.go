@@ -115,7 +115,7 @@ func (self *Session) doExec(query string, args ...interface{}) (sql.Result, erro
         if self.verbose { log.Debugln("doExec in Tx: ", query, args) }
         return self.tx.Exec(query, args...)
     }else{
-        if self.verbose { log.Debugln("doExec in DB: ", query, args) }
+        if self.verbose { log.Debugln("doExec in Database: ", query, args) }
         return self.db.Exec(query, args...)
     }
     return nil, nil
@@ -126,7 +126,7 @@ func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, erro
         if self.verbose { log.Debugln("doQuery in Tx: ", query, args) }
         return self.tx.Query(query, args...)
     }else{
-        if self.verbose { log.Debugln("doQuery in DB: ", query, args) }
+        if self.verbose { log.Debugln("doQuery in Database: ", query, args) }
         return self.db.Query(query, args...)
     }
     return nil, nil

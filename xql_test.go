@@ -29,7 +29,7 @@ func TestCreateEngine(t *testing.T) {
     engine, e := CreateEngine("postgres",
         "host=localhost port=5432 user=postgres password=postgres dbname=cygnuxdb sslmode=disable")
     if nil != e {
-        t.Fatal("Connec DB failed:> ", e)
+        t.Fatal("Connec Database failed:> ", e)
     }
     t.Log("MovieCrew:> ", MovieCrew)
     _ = engine.MakeSession()
@@ -41,7 +41,7 @@ func TestQuerySet_Insert(t *testing.T) {
     engine, e := CreateEngine("postgres",
         "host=localhost port=5432 user=postgres password=postgres dbname=cygnuxdb sslmode=disable")
     if nil != e {
-        t.Fatal("Connec DB failed:> ", e)
+        t.Fatal("Connec Database failed:> ", e)
     }
     t.Log("MovieCrew:> ", MovieCrew)
     sess := engine.MakeSession()
