@@ -9,13 +9,29 @@ import (
 // Table ...
 // Struct defined for a table object.
 type Table struct {
-	TableName      string
-	Schema         string
-	Entity         interface{}
-	MappedColumns  map[string]*Column
-	ListedColumns  []*Column
-	PrimaryKey     []string
-	JTaggedColumns map[string]*Column
+
+}
+
+type TableIdentified interface {
+	TableName() string
+	TableFullName() string
+}
+
+type TableSQLed interface {
+	Create(session *Session) error
+	Drop(session *Session) error
+	Truncate(session *Session) error
+	Select(set QuerySet)
+	Update(set QuerySet)
+	Insert()
+	Delete()
+}
+func (t Table) TableName() string {
+	return ""
+}
+
+func (t Table) TableFullName() string {
+	return t.TableName()
 }
 
 

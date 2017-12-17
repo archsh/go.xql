@@ -1,5 +1,9 @@
 package xql
 
+import (
+	"database/sql/driver"
+)
+
 type ColumnType int16
 
 /*
@@ -70,7 +74,7 @@ const (
 	BOLB
 	MEDIUMBLOB
 	LONGBLOB
-	UUID
+	//UUID
 	ENUM
 	JSON
 	JSONB
@@ -113,4 +117,175 @@ type Column struct {
 // -
 func buildColumn(prop interface{}, tag string) Column {
 	return Column{}
+}
+
+type Columned interface {
+	Scan(value interface{}) error
+	Value() (driver.Value, error)
+}
+
+type Marshaler interface {
+	MarshalJSON() ([]byte, error)
+}
+
+type Unmarshaler interface {
+	UnmarshalJSON([]byte) error
+}
+
+type XMLable interface {
+
+}
+
+type Stringtifyable interface {
+
+}
+
+type String struct {
+	Column
+	value string
+}
+
+type UUID struct {
+	Column
+	value string
+}
+
+type Text struct {
+	Column
+	value string
+}
+
+type TinyText struct {
+	Column
+	value string
+}
+
+type MediumText struct {
+	Column
+	value string
+}
+
+type LongText struct {
+	Column
+	value string
+}
+
+type Bolb struct {
+	Column
+	value []byte
+}
+
+type TinyBolb struct {
+	Column
+	value []byte
+}
+
+type MediumBolb struct {
+	Column
+	value []byte
+}
+
+type LongBolb struct {
+	Column
+	value []byte
+}
+
+type Integer struct {
+	Column
+	value int
+}
+
+type SmallInteger struct {
+	Column
+	value int16
+}
+
+type TinyInteger struct {
+	Column
+	value int8
+}
+
+type BigInteger struct {
+	Column
+	value int64
+}
+
+type Float struct {
+	Column
+	value float32
+}
+
+type Double struct {
+	Column
+	value float64
+}
+
+type Serial struct {
+	Column
+	value uint
+}
+
+type SmallSerial struct {
+	Column
+	value uint16
+}
+
+type TinySerial struct {
+	Column
+	value uint8
+}
+
+type BigSerial struct {
+	Column
+	value uint64
+}
+
+type Enum struct {
+	Column
+	value interface{}
+}
+
+type JSON struct {
+	Column
+	value interface{}
+}
+
+type JSONB struct {
+	Column
+	value interface{}
+}
+
+type XML struct {
+	Column
+	value interface{}
+}
+
+type Set struct {
+	Column
+	value interface{}
+}
+
+type Binary struct {
+	Column
+	value interface{}
+}
+
+type Date struct {
+	Column
+	value interface{}
+}
+
+type Time struct {
+	Column
+	value interface{}
+}
+
+type DateTime struct {
+	Column
+	value interface{}
+}
+
+type TimeStamp struct {
+	Column
+	value interface{}
 }
