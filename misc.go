@@ -7,7 +7,6 @@ import (
 
 var camel = regexp.MustCompile("(^[^A-Z]*|[A-Z]*)([A-Z][^A-Z]+|$)")
 
-
 func Camel2Underscore(s string) string {
     var a []string
     for _, sub := range camel.FindAllStringSubmatch(s, -1) {

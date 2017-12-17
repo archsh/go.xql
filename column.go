@@ -1,7 +1,7 @@
 package xql
 
 import (
-	"database/sql/driver"
+    "database/sql/driver"
 )
 
 type ColumnType int16
@@ -52,55 +52,67 @@ uuid                                      universally unique identifier
 xml                                       XML data
  */
 const (
-	UNKNOWN ColumnType = iota
-	BOOLEAN
-	INTEGER
-	TINYINT
-	SMALLINT
-	BIGINT
-	SERIAL
-	SMALLSERIAL
-	BIGSERIAL
-	FLOAT
-	DOUBLE
-	NUMBER
-	DECIMAL
-	CHAR
-	VARCHAR
-	TEXT
-	TINYTEXT
-	MEDIUMTEXT
-	LONGTEXT
-	BOLB
-	MEDIUMBLOB
-	LONGBLOB
-	//UUID
-	ENUM
-	JSON
-	JSONB
-	XML
-	SET
-	BINARY
-	DATE
-	TIME
-	DATETIME
-	TIMESTAMP
+    UNKNOWN     ColumnType = iota
+    BOOLEAN
+    INTEGER
+    TINYINT
+    SMALLINT
+    BIGINT
+    SERIAL
+    SMALLSERIAL
+    BIGSERIAL
+    FLOAT
+    DOUBLE
+    NUMBER
+    DECIMAL
+    CHAR
+    VARCHAR
+    TEXT
+    TINYTEXT
+    MEDIUMTEXT
+    LONGTEXT
+    BOLB
+    MEDIUMBLOB
+    LONGBLOB
+    //UUID
+    ENUM
+    JSON
+    JSONB
+    XML
+    SET
+    BINARY
+    DATE
+    TIME
+    DATETIME
+    TIMESTAMP
 )
-
 
 // Column ...
 // Struct defined for a column object
 type Column struct {
-	FieldName    string
-	PropertyName string
-	JTAG         string
-	Type         string
-	Length       uint16
-	Unique       bool
-	Nullable     bool
-	Indexed      bool
-	Auto         bool
-	PrimaryKey   bool
+    FieldName    string
+    PropertyName string
+    JTAG         string
+    Type         string
+    Length       uint16
+    Unique       bool
+    Nullable     bool
+    Indexed      bool
+    Auto         bool
+    PrimaryKey   bool
+}
+
+type ColumnProperty struct {
+    Instance   interface{}
+    FieldName  string
+    MemberName string
+    // Common Properties
+    Unique     bool
+    Indexed    bool
+    Nullable   bool
+    PrimaryKey bool
+    Default    interface{}
+    //
 }
 
 // buildColumn
@@ -116,176 +128,24 @@ type Column struct {
 // - default=TYPE|VALUE|FUNCTION
 // -
 func buildColumn(prop interface{}, tag string) Column {
-	return Column{}
+    return Column{}
 }
 
 type Columned interface {
-	Scan(value interface{}) error
-	Value() (driver.Value, error)
+    Scan(value interface{}) error
+    Value() (driver.Value, error)
 }
 
 type Marshaler interface {
-	MarshalJSON() ([]byte, error)
+    MarshalJSON() ([]byte, error)
 }
 
 type Unmarshaler interface {
-	UnmarshalJSON([]byte) error
+    UnmarshalJSON([]byte) error
 }
 
 type XMLable interface {
-
 }
 
 type Stringtifyable interface {
-
-}
-
-type String struct {
-	Column
-	value string
-}
-
-type UUID struct {
-	Column
-	value string
-}
-
-type Text struct {
-	Column
-	value string
-}
-
-type TinyText struct {
-	Column
-	value string
-}
-
-type MediumText struct {
-	Column
-	value string
-}
-
-type LongText struct {
-	Column
-	value string
-}
-
-type Bolb struct {
-	Column
-	value []byte
-}
-
-type TinyBolb struct {
-	Column
-	value []byte
-}
-
-type MediumBolb struct {
-	Column
-	value []byte
-}
-
-type LongBolb struct {
-	Column
-	value []byte
-}
-
-type Integer struct {
-	Column
-	value int
-}
-
-type SmallInteger struct {
-	Column
-	value int16
-}
-
-type TinyInteger struct {
-	Column
-	value int8
-}
-
-type BigInteger struct {
-	Column
-	value int64
-}
-
-type Float struct {
-	Column
-	value float32
-}
-
-type Double struct {
-	Column
-	value float64
-}
-
-type Serial struct {
-	Column
-	value uint
-}
-
-type SmallSerial struct {
-	Column
-	value uint16
-}
-
-type TinySerial struct {
-	Column
-	value uint8
-}
-
-type BigSerial struct {
-	Column
-	value uint64
-}
-
-type Enum struct {
-	Column
-	value interface{}
-}
-
-type JSON struct {
-	Column
-	value interface{}
-}
-
-type JSONB struct {
-	Column
-	value interface{}
-}
-
-type XML struct {
-	Column
-	value interface{}
-}
-
-type Set struct {
-	Column
-	value interface{}
-}
-
-type Binary struct {
-	Column
-	value interface{}
-}
-
-type Date struct {
-	Column
-	value interface{}
-}
-
-type Time struct {
-	Column
-	value interface{}
-}
-
-type DateTime struct {
-	Column
-	value interface{}
-}
-
-type TimeStamp struct {
-	Column
-	value interface{}
 }

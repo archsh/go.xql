@@ -8,16 +8,14 @@ import (
     "fmt"
 )
 
-
-
-func (qc QueryColumn) String(as...bool) string {
+func (qc QueryColumn) String(as ...bool) string {
     s := ""
     if qc.Function != "" {
         s = fmt.Sprintf(`%s("%s")`, qc.Function, qc.FieldName) //qc.Function+"("+qc.FieldName+")"
-    }else{
+    } else {
         s = fmt.Sprintf(`"%s"`, qc.FieldName)
     }
-    if qc.Alias != "" && len(as)>0 && as[0] {
+    if qc.Alias != "" && len(as) > 0 && as[0] {
         s = s + " AS " + qc.Alias
     }
     return s
@@ -33,10 +31,9 @@ type QuerySet struct {
     limit   int64
 }
 
-
 type XRow struct {
     row *sql.Row
-    qs *QuerySet
+    qs  *QuerySet
 }
 
 func (self *XRow) Scan(dest ...interface{}) error {
@@ -64,7 +61,7 @@ func (self *XRow) Scan(dest ...interface{}) error {
 
 type XRows struct {
     rows *sql.Rows
-    qs *QuerySet
+    qs   *QuerySet
 }
 
 func (self *XRows) Scan(dest ...interface{}) error {
@@ -102,7 +99,6 @@ func (self *XRows) Close() {
     self.rows = nil
 }
 
-
 func makeQueryOrder(table *Table, s string) QueryOrder {
     qo := QueryOrder{}
     if s[:1] == "-" {
@@ -121,19 +117,19 @@ func (self *QuerySet) Filter(cons ...interface{}) *QuerySet {
             self.filters = append(self.filters, QueryFilter{
                 Field: vs,
             })
-        }else if vm, ok := con.(map[string]interface{}); ok {
+        } else if vm, ok := con.(map[string]interface{}); ok {
             for k, v := range vm {
                 self.filters = append(self.filters, QueryFilter{
-                    Field:k,
-                    Value:v,
+                    Field:    k,
+                    Value:    v,
                     Operator: "=",
                 })
             }
-        }else if vf, ok := con.(*QueryFilter); ok {
+        } else if vf, ok := con.(*QueryFilter); ok {
             self.filters = append(self.filters, *vf)
-        }else if vf, ok := con.(QueryFilter); ok {
+        } else if vf, ok := con.(QueryFilter); ok {
             self.filters = append(self.filters, vf)
-        }else{
+        } else {
             panic("Unknow Filter!")
         }
     }
@@ -167,17 +163,17 @@ func (self *QuerySet) Limit(limit int64) *QuerySet {
     return self
 }
 
-func (self *QuerySet) Count(cols...string) (int64,error) {
+func (self *QuerySet) Count(cols ...string) (int64, error) {
     var fieldname string
     if len(cols) > 0 {
         fieldname = cols[0]
-    }else if len(self.table.PrimaryKey) > 0 {
+    } else if len(self.table.PrimaryKey) > 0 {
         fieldname = self.table.PrimaryKey[0]
-    }else{
+    } else {
         fieldname = self.table.ListedColumns[0].FieldName
     }
     s, args, err := self.session.getDialect().Select(self.table,
-        []QueryColumn{{Function:"COUNT", FieldName:fieldname}},
+        []QueryColumn{{Function: "COUNT", FieldName: fieldname}},
         self.filters, nil, -1, -1)
     if nil != err {
         return 0, err
@@ -193,7 +189,7 @@ func (self *QuerySet) Count(cols...string) (int64,error) {
 func (self *QuerySet) All() (*XRows, error) {
     if len(self.queries) < 1 {
         for _, col := range self.table.MappedColumns {
-            self.queries = append(self.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
+            self.queries = append(self.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
         }
     }
     s, args, err := self.session.getDialect().Select(self.table, self.queries,
@@ -205,15 +201,14 @@ func (self *QuerySet) All() (*XRows, error) {
     if nil != err {
         return nil, err
     }
-    xrows := &XRows{rows:rows, qs:self}
+    xrows := &XRows{rows: rows, qs: self}
     return xrows, nil
 }
-
 
 func (self *QuerySet) One() *XRow {
     if len(self.queries) < 1 {
         for _, col := range self.table.MappedColumns {
-            self.queries = append(self.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
+            self.queries = append(self.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
         }
     }
     s, args, err := self.session.getDialect().Select(self.table, self.queries,
@@ -222,7 +217,7 @@ func (self *QuerySet) One() *XRow {
         return nil
     }
     row := self.session.doQueryRow(s, args...)
-    xrow := &XRow{row:row, qs:self}
+    xrow := &XRow{row: row, qs: self}
     return xrow
 }
 
@@ -233,15 +228,15 @@ func (self *QuerySet) Update(vals interface{}) (int64, error) {
             var fk string
             if c, ok := self.table.MappedColumns[k]; ok {
                 fk = c.FieldName
-            }else if c, ok := self.table.JTaggedColumns[k]; ok {
+            } else if c, ok := self.table.JTaggedColumns[k]; ok {
                 fk = c.FieldName
-            }else{
-                return 0, errors.New("Invalid column:"+k)
+            } else {
+                return 0, errors.New("Invalid column:" + k)
             }
-            uc := UpdateColumn{Field:fk, Value:v, Operator:"="}
+            uc := UpdateColumn{Field: fk, Value: v, Operator: "="}
             cols = append(cols, uc)
         }
-    }else if cx, ok := vals.([]UpdateColumn); ok {
+    } else if cx, ok := vals.([]UpdateColumn); ok {
         cols = cx
     }
     s, args, err := self.session.getDialect().Update(self.table, self.filters, cols...)
@@ -252,7 +247,7 @@ func (self *QuerySet) Update(vals interface{}) (int64, error) {
     ret, err = self.session.doExec(s, args...)
     if nil != err {
         return 0, err
-    }else{
+    } else {
         rows, e := ret.RowsAffected()
         return rows, e
     }
@@ -268,7 +263,7 @@ func (self *QuerySet) Delete() (int64, error) {
     ret, err = self.session.doExec(s, args...)
     if nil != err {
         return 0, err
-    }else{
+    } else {
         rows, e := ret.RowsAffected()
         return rows, e
     }
@@ -282,7 +277,7 @@ func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
     var rows int64 = 0
     var cols []string
     if len(self.queries) > 0 {
-        for _,x := range self.queries {
+        for _, x := range self.queries {
             cols = append(cols, x.FieldName)
         }
     }
@@ -290,7 +285,7 @@ func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
         //log.Debugln("reflect.TypeOf(obj)>", reflect.TypeOf(obj))
         //log.Debugln("reflect.TypeOf(self.table.Entity)>", reflect.TypeOf(self.table.Entity))
         if reflect.TypeOf(obj) != reflect.TypeOf(self.table.Entity) {
-           return 0, errors.New("Invalid data type.")
+            return 0, errors.New("Invalid data type.")
         }
         s, args, err := self.session.getDialect().Insert(self.table, obj, cols...)
         if nil != err {
@@ -299,7 +294,7 @@ func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
         _, err = self.session.doExec(s, args...)
         if nil != err {
             return 0, err
-        }else{
+        } else {
             //if nil != ret {
             //    n, e := ret.LastInsertId()
             //    if nil == e {

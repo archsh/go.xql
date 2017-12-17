@@ -1,4 +1,5 @@
 package postgres
+
 import (
     "github.com/archsh/go.xql"
     "fmt"
@@ -8,8 +9,6 @@ import (
 )
 
 type PostgresDialect struct {
-
-
 }
 
 /*
@@ -96,20 +95,19 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
     if len(t.PrimaryKey) > 0 {
         cols = append(cols, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", t.TableName, strings.Join(t.PrimaryKey, ",")))
     }
-    createSQL =  createSQL + strings.Join(cols, ", ") + " );"
+    createSQL = createSQL + strings.Join(cols, ", ") + " );"
     s = strings.Join(append([]string{createSQL}, indexes...), "\n")
     return s, args, err
 }
 
-
-func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, offset int64, limit int64)  (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, offset int64, limit int64) (s string, args []interface{}, err error) {
     var colnames []string
-    for _,x := range cols {
+    for _, x := range cols {
         colnames = append(colnames, x.String())
     }
-    s = fmt.Sprintf("SELECT %s FROM ", strings.Join(colnames,","))
+    s = fmt.Sprintf("SELECT %s FROM ", strings.Join(colnames, ","))
     if t.Schema != "" {
-        s += t.Schema+"."
+        s += t.Schema + "."
     }
     s += t.TableName
     var n int
@@ -130,7 +128,7 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
             n += 1
             if f.Function != "" {
                 s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, f.Field)
-            }else{
+            } else {
                 s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, f.Field)
             }
 
@@ -139,7 +137,7 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
             n += 1
             if f.Function != "" {
                 s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
-            }else{
+            } else {
                 s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, f.Field, f.Operator, n)
             }
 
@@ -168,10 +166,10 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
     return
 }
 
-func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col...string) (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (s string, args []interface{}, err error) {
     s = "INSERT INTO "
     if t.Schema != "" {
-        s += t.Schema+"."
+        s += t.Schema + "."
     }
     s += t.TableName
     var cols []string
@@ -191,28 +189,28 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col...string) (s
             fv := reflect.Indirect(r).FieldByName(v.PropertyName).Interface()
             args = append(args, fv)
         }
-    }else{
+    } else {
         for k, v := range t.MappedColumns {
             //fmt.Println("POSTGRES Insert>2>>>",k,v.Auto,v.PrimaryKey,v)
             if v.Auto {
                 continue
             }
             i += 1
-            cols = append(cols, fmt.Sprintf(`"%s"`,k))
+            cols = append(cols, fmt.Sprintf(`"%s"`, k))
             vals = append(vals, fmt.Sprintf("$%d", i))
             fv := reflect.Indirect(r).FieldByName(v.PropertyName).Interface()
             args = append(args, fv)
         }
     }
 
-    s = fmt.Sprintf("%s (%s) VALUES(%s)", s, strings.Join(cols,","), strings.Join(vals,","))
+    s = fmt.Sprintf("%s (%s) VALUES(%s)", s, strings.Join(cols, ","), strings.Join(vals, ","))
     return
 }
 
 func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
     s = "UPDATE "
     if t.Schema != "" {
-        s += t.Schema+"."
+        s += t.Schema + "."
     }
     s += t.TableName
     if len(cols) < 1 {
@@ -223,11 +221,10 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
         n += 1
         if i == 0 {
             //s = s + " SET "
-            s = fmt.Sprintf(`%s SET "%s"=$%d`,s, uc.Field, n)
-        }else{
-            s = fmt.Sprintf(`%s, "%s"=$%d`,s, uc.Field, n)
+            s = fmt.Sprintf(`%s SET "%s"=$%d`, s, uc.Field, n)
+        } else {
+            s = fmt.Sprintf(`%s, "%s"=$%d`, s, uc.Field, n)
         }
-
 
         args = append(args, uc.Value)
     }
@@ -261,7 +258,7 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
 func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s string, args []interface{}, err error) {
     s = "DELETE FROM "
     if t.Schema != "" {
-        s += t.Schema+"."
+        s += t.Schema + "."
     }
     s += t.TableName
     var n int
