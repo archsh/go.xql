@@ -19,3 +19,31 @@ func Camel2Underscore(s string) string {
     }
     return strings.ToLower(strings.Join(a, "_"))
 }
+
+
+func inSlice(a string, ls []string) bool {
+    for _, s := range ls {
+        if a == s {
+            return true
+        }
+    }
+    return false
+}
+
+func getSkips(tags []string) (skips []string) {
+    if nil == tags || len(tags) < 1 {
+        return
+    }
+    for _, tag := range tags {
+        if strings.HasPrefix(tag, "skips:") {
+            s := strings.TrimLeft(tag, "skips:")
+            for _, n := range strings.Split(s, ";") {
+                if n != "" {
+                    skips = append(skips, n)
+                }
+            }
+            return
+        }
+    }
+    return
+}

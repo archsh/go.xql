@@ -2,18 +2,26 @@ package xql
 
 import (
     "strings"
+    "strconv"
 )
 
-type PropertySet struct {
-    FieldName    string
-    PropertyName string
+type PropertySet map[string]string
 
-    extras map[string]string
-}
-
-func ParseProperties(s string) (*PropertySet, error) {
-    p := &PropertySet{
-        extras: make(map[string]string),
+func ParseProperties(s string) (PropertySet, error) {
+    p := make(PropertySet)
+    if s == "" {
+        return p, nil
+    }
+    for _, ss := range strings.Split(s, ",") {
+        if ss == "" {
+            continue
+        }
+        ks := strings.SplitN(ss, "=", 2)
+        if len(ks) > 1 {
+            p[ks[0]] = ks[1]
+        }else{
+            p[ks[0]] = "t"
+        }
     }
 
     return p, nil
@@ -36,20 +44,23 @@ func (h PropertySet) GetInt(k string, defaults ... int) (int, bool) {
         return d, false
     }
     if ns, ok := h[k]; ok {
-        if n, t := ns.(int); t {
-            return n, t
-        }
-        if n, t := ns.(int32); t {
-            return int(n), t
-        }
-        if n, t := ns.(int16); t {
-            return int(n), t
-        }
-        if n, t := ns.(int64); t {
-            return int(n), t
+        i, e := strconv.ParseInt(ns, 10, 32)
+        if nil != e {
+            return d, false
+        }else{
+            return int(i), true
         }
     }
     return d, false
+}
+
+func (h PropertySet) PopInt(k string, defaults ... int) (int, bool) {
+    if v, ok := h.GetInt(k, defaults...); ok {
+        delete(h, k)
+        return v, ok
+    }else{
+        return v, ok
+    }
 }
 
 func (h PropertySet) GetInt64(k string, defaults ... int64) (int64, bool) {
@@ -61,20 +72,23 @@ func (h PropertySet) GetInt64(k string, defaults ... int64) (int64, bool) {
         return d, false
     }
     if ns, ok := h[k]; ok {
-        if n, t := ns.(int); t {
-            return int64(n), t
-        }
-        if n, t := ns.(int32); t {
-            return int64(n), t
-        }
-        if n, t := ns.(int16); t {
-            return int64(n), t
-        }
-        if n, t := ns.(int64); t {
-            return int64(n), t
+        i, e := strconv.ParseInt(ns, 10, 32)
+        if nil != e {
+            return d, false
+        }else{
+            return i, true
         }
     }
     return d, false
+}
+
+func (h PropertySet) PopInt64(k string, defaults ... int64) (int64, bool) {
+    if v, ok := h.GetInt64(k, defaults...); ok {
+        delete(h, k)
+        return v, ok
+    }else{
+        return v, ok
+    }
 }
 
 func (h PropertySet) GetUInt(k string, defaults ... uint) (uint, bool) {
@@ -83,23 +97,23 @@ func (h PropertySet) GetUInt(k string, defaults ... uint) (uint, bool) {
         d = defaults[0]
     }
     if ns, ok := h[k]; ok {
-        if n, t := ns.(uint); t {
-            return n, t
-        }
-        if n, t := ns.(int); t {
-            return uint(n), t
-        }
-        if n, t := ns.(int32); t {
-            return uint(n), t
-        }
-        if n, t := ns.(int16); t {
-            return uint(n), t
-        }
-        if n, t := ns.(int64); t {
-            return uint(n), t
+        i, e := strconv.ParseUint(ns, 10, 32)
+        if nil != e {
+            return d, false
+        }else{
+            return uint(i), true
         }
     }
     return d, false
+}
+
+func (h PropertySet) PopUInt(k string, defaults ... uint) (uint, bool) {
+    if v, ok := h.GetUInt(k, defaults...); ok {
+        delete(h, k)
+        return v, ok
+    }else{
+        return v, ok
+    }
 }
 
 func (h PropertySet) GetString(k string, defaults ... string) (string, bool) {
@@ -111,11 +125,18 @@ func (h PropertySet) GetString(k string, defaults ... string) (string, bool) {
         return d, false
     }
     if ns, ok := h[k]; ok {
-        if s, t := ns.(string); t {
-            return s, t
-        }
+        return ns, true
     }
     return d, false
+}
+
+func (h PropertySet) PopString(k string, defaults ... string) (string, bool) {
+    if v, ok := h.GetString(k, defaults...); ok {
+        delete(h, k)
+        return v, ok
+    }else{
+        return v, ok
+    }
 }
 
 func (h PropertySet) GetBool(k string, defaults ... bool) (bool, bool) {
@@ -127,18 +148,21 @@ func (h PropertySet) GetBool(k string, defaults ... bool) (bool, bool) {
         return d, false
     }
     if ns, ok := h[k]; ok {
-        if b, t := ns.(bool); t {
-            return b, t
+        switch strings.ToLower(ns) {
+        case "t", "true", "yes", "ok", "y":
+            return true, true
+        case "f", "false", "no", "n":
+            return false, true
         }
-        if s, t := ns.(string); t {
-            switch strings.ToLower(s) {
-            case "t", "true", "yes", "ok":
-                return true, true
-            case "f", "false", "no":
-                return false, true
-            }
-        }
-
     }
     return d, false
+}
+
+func (h PropertySet) PopBool(k string, defaults ... bool) (bool, bool) {
+    if v, ok := h.GetBool(k, defaults...); ok {
+        delete(h, k)
+        return v, ok
+    }else{
+        return v, ok
+    }
 }

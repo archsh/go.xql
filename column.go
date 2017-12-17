@@ -1,151 +1,124 @@
 package xql
 
 import (
-    "database/sql/driver"
+    "reflect"
+    "strings"
+    "errors"
+    "fmt"
 )
 
-type ColumnType int16
-
-/*
-       Name               Aliases                               Description
-bigint            int8                    signed eight-byte integer
-bigserial         serial8                 autoincrementing eight-byte integer
-bit [ (n) ]                               fixed-length bit string
-bit varying [ (n) varbit                  variable-length bit string
-boolean           bool                    logical Boolean (true/false)
-box                                       rectangular box on a plane
-bytea                                     binary data (“byte array”)
-character [ (n) ] char [ (n) ]            fixed-length character string
-character varying varchar [ (n) ]         variable-length character string
-cidr                                      IPv4 or IPv6 network address
-circle                                    circle on a plane
-date                                      calendar date (year, month, day)
-double precision  float8                  double precision floating-point number (8 bytes)
-inet                                      IPv4 or IPv6 host address
-integer           int,?int4              signed four-byte integer
-interval [?fields?] [ (p) ]             time span
-json                                      textual JSON data
-jsonb                                     binary JSON data, decomposed
-line                                      infinite line on a plane
-lseg                                      line segment on a plane
-macaddr                                   MAC (Media Access Control) address
-macaddr8                                  MAC (Media Access Control) address (EUI-64 format)
-money                                     currency amount
-numeric [ (p,?s) decimal [ (p,?s) ]     exact numeric of selectable precision
-path                                      geometric path on a plane
-pg_lsn                                    PostgreSQL?Log Sequence Number
-point                                     geometric point on a plane
-polygon                                   closed geometric path on a plane
-real              float4                  single precision floating-point number (4 bytes)
-smallint          int2                    signed two-byte integer
-smallserial       serial2                 autoincrementing two-byte integer
-serial            serial4                 autoincrementing four-byte integer
-text                                      variable-length character string
-time [ (p) ] [ without time zone ]        time of day (no time zone)
-time [ (p) ] with timetz                  time of day, including time zone
-timestamp [ (p) ] [ without time zone ]   date and time (no time zone)
-timestamp [ (p) ] timestamptz             date and time, including time zone
-tsquery                                   text search query
-tsvector                                  text search document
-txid_snapshot                             user-level transaction ID snapshot
-uuid                                      universally unique identifier
-xml                                       XML data
- */
-const (
-    UNKNOWN     ColumnType = iota
-    BOOLEAN
-    INTEGER
-    TINYINT
-    SMALLINT
-    BIGINT
-    SERIAL
-    SMALLSERIAL
-    BIGSERIAL
-    FLOAT
-    DOUBLE
-    NUMBER
-    DECIMAL
-    CHAR
-    VARCHAR
-    TEXT
-    TINYTEXT
-    MEDIUMTEXT
-    LONGTEXT
-    BOLB
-    MEDIUMBLOB
-    LONGBLOB
-    //UUID
-    ENUM
-    JSON
-    JSONB
-    XML
-    SET
-    BINARY
-    DATE
-    TIME
-    DATETIME
-    TIMESTAMP
-)
-
-// Column ...
-// Struct defined for a column object
 type Column struct {
-    FieldName    string
-    PropertyName string
-    JTAG         string
-    Type         string
-    Length       uint16
-    Unique       bool
-    Nullable     bool
-    Indexed      bool
-    Auto         bool
-    PrimaryKey   bool
-}
-
-type ColumnProperty struct {
-    Instance   interface{}
+    PropertySet
     FieldName  string
-    MemberName string
-    // Common Properties
-    Unique     bool
-    Indexed    bool
-    Nullable   bool
-    PrimaryKey bool
+    ElemName   string
+    Jtag       string
+    Type       reflect.Type
+    TypeDefine string
+    Indexed    bool // Indexed or not, on field
+    Nullable   bool // Nullable constraint on field
+    Unique     bool // Unique constraint on field
+    Check      interface{}  // Check constraint on field
+    PrimaryKey bool //Primary Key constraint on field
     Default    interface{}
-    //
+    ForeignKey interface{}
+    table      interface{}
 }
 
-// buildColumn
-// Build a Column object according to given field and tag, a tag should be:
-// `xql:"Column('name',TYPE, ...)"`
-// Available parameters:
-// - Sequence()
-// - ForeinKey()
-// - nullable=True/False
-// - unique=True/False
-// - primary_key=True/False
-// - index=True/False
-// - default=TYPE|VALUE|FUNCTION
-// -
-func buildColumn(prop interface{}, tag string) Column {
-    return Column{}
+type Declarable interface {
+    Declare(props PropertySet) string
 }
 
-type Columned interface {
-    Scan(value interface{}) error
-    Value() (driver.Value, error)
+func GenericDeclare(f reflect.StructField, props PropertySet) (string, error) {
+    switch f.Type.Kind() {
+    case reflect.String:
+        size, _ := props.GetUInt("size", 32)
+        return fmt.Sprintf("VARCHAR(%d)", size), nil
+    case reflect.Int16, reflect.Uint16:
+        return "SMALLINT", nil
+    case reflect.Int, reflect.Int32, reflect.Uint, reflect.Uint32:
+        return "INTEGER", nil
+    case reflect.Int64, reflect.Uint64:
+        return "BIGINT", nil
+    case reflect.Bool:
+        return "BOOLEAN", nil
+    case reflect.Float32, reflect.Float64:
+        return "FLOAT", nil
+    }
+    return "", errors.New("Unknow Type!")
 }
 
-type Marshaler interface {
-    MarshalJSON() ([]byte, error)
+// makeColumn
+// Make a &Column{} object according to given field.
+func makeColumn(f reflect.StructField, v reflect.Value) *Column {
+    props, e := ParseProperties(f.Tag.Get("xql"))
+    if nil != e {
+        panic(e)
+    }
+    field := &Column{
+        FieldName:Camel2Underscore(f.Name),
+        ElemName:f.Name,
+        Type: f.Type,
+    }
+    jtag := f.Tag.Get("json")
+    if jtag != "" {
+        field.Jtag = jtag
+    }else{
+        field.Jtag = f.Name
+    }
+    field.Indexed, _ = props.PopBool("index", false)
+    field.Nullable, _ = props.PopBool("nullable", false)
+    field.Unique, _ = props.PopBool("unique", false)
+    if fn, ok := props.PopString("name"); ok {
+        field.FieldName = fn
+    }
+    if df, ok := props.PopString("default"); ok {
+        field.Default = df
+    }
+    field.PropertySet = props
+    if p, ok := v.Interface().(Declarable); ok {
+        field.TypeDefine = p.Declare(props)
+    }else{
+        if d, e := GenericDeclare(f, props); nil == e {
+            field.TypeDefine = d
+        }else{
+            panic(e)
+        }
+    }
+    return field
 }
 
-type Unmarshaler interface {
-    UnmarshalJSON([]byte) error
+// makeColumns
+// Make a list of &Column{} objects according to a given struct pointer.
+func makeColumns(p interface{}, recursive bool, skips ...string) []*Column {
+    if nil == p {
+        panic("Can not use nil pointer ")
+    }
+
+    et := reflect.TypeOf(p)
+    ev := reflect.ValueOf(p)
+    fields := make([]*Column,et.Elem().NumField())
+    for i := 0; i < et.Elem().NumField(); i++ {
+        f := et.Elem().Field(i)
+        v := ev.Elem().Field(i)
+        if inSlice(f.Name, skips) {
+            continue
+        }
+        x_tags := strings.Split(f.Tag.Get("xql"), ",")
+        if f.Anonymous && !recursive {
+            if x_tags[0] != "-" {
+                sks := getSkips(x_tags)
+                for _, c := range makeColumns(ev.Elem().Field(i).Addr().Interface(), true, sks...) {
+                    fields = append(fields, c)
+                }
+            } else {
+                continue
+            }
+            continue
+        }
+        field := makeColumn(f, v)
+        fields = append(fields, field)
+    }
+    return fields
 }
 
-type XMLable interface {
-}
 
-type Stringtifyable interface {
-}

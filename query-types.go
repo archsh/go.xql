@@ -16,7 +16,7 @@ const (
 
 type QueryFilter struct {
     Condition ConditionType // AND , OR
-    Reversed  bool          // Reversed Field and Value if it is true
+    Reversed  bool          // Reversed Column and Value if it is true
     Field     string
     Operator  string // Value will not used if empty.
     Function  string

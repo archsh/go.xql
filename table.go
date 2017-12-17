@@ -1,215 +1,114 @@
 package xql
 
-import (
-    "reflect"
-    "strings"
-    //"fmt"
-)
-
 // Table ...
 // Struct defined for a table object.
 type Table struct {
-    fields       []*Field
+    fields       []*Column
     constraints  []*Constraint
-    primary_keys []*Field
-    foreign_keys []*Field
+    indexes      []*Index
+    primary_keys []*Column
+    foreign_keys []*Column
+    m_fields     map[string]*Column
+    x_fields     map[string]*Column
+    j_fields     map[string]*Column
+    entity       TableIdentified
+    schema       string
 }
 
+// TableIdentified which make sure struct have a method TableName()
+// This is mandatory for a struct can use as Table structure.
 type TableIdentified interface {
     TableName() string
-    TableFullName() string
-    Construct() error
 }
 
-type TableSQLed interface {
-    Create(session *Session) error
-    Drop(session *Session) error
-    Truncate(session *Session) error
-    Select(set QuerySet)
-    Update(set QuerySet)
-    Insert()
-    Delete()
+// TableIgnored
+// Which allow struct to define a method Ignore() to tell ignore elements for table fields
+type TableIgnored interface {
+    Ignore() []string
 }
 
-func (t Table) TableName() string {
-    return ""
+// TablePrimaryKeyed
+// Which allow struct to define a method PrimaryKey() to have multiple primary keys
+type TablePrimaryKeyed interface {
+    PrimaryKey() []string
 }
 
-func (t Table) TableFullName() string {
-    return t.TableName()
+// TableUniqued
+// Which allow struct to define a method Unique() to define unique constraint with multiple fields
+type TableUniqued interface {
+    Unique() []string
 }
 
-func (t Table) Construct() error {
-    return nil
+
+// TableChecked
+// Which allow struct to define a method Check() to define customized check constraint on table
+type TableChecked interface {
+    Check() []string
 }
 
-func GetFields(t interface{}) ([]*Field, error) {
-    fields := []*Field{}
-
-    return fields, nil
+// TableExcluded
+// Which allow struct to define a method Exclude() to define a customized exclude constraint on table
+type TableExcluded interface {
+    Exclude() []string
 }
 
-func GetConstraints(t interface{}) ([]*Constraint, error) {
-    constraints := []*Constraint{}
-
-    return constraints, nil
+// TableInitRequired
+// Which entity implemented will be called when xql create a new struct instance.
+type TableInitRequired interface {
+    Initialize()
 }
 
-func GetIndexes(t interface{}) ([]*Index, error) {
-    indexes := []*Index{}
 
-    return indexes, nil
-}
-
-func inSlice(a string, ls []string) bool {
-    for _, s := range ls {
-        if a == s {
-            return true
-        }
+func (t *Table) TableName() string {
+    if t.schema != "" {
+        return t.schema + "." + t.entity.TableName()
     }
-    return false
+    return t.entity.TableName()
 }
 
-func getSkips(tags []string) (skips []string) {
-    if nil == tags || len(tags) < 1 {
-        return
-    }
-    for _, tag := range tags {
-        if strings.HasPrefix(tag, "skips:") {
-            s := strings.TrimLeft(tag, "skips:")
-            for _, n := range strings.Split(s, ";") {
-                if n != "" {
-                    skips = append(skips, n)
-                }
-            }
-            return
-        }
-    }
-    return
+func (t *Table) GetFields() []*Column {
+    return t.fields
 }
 
-func makeColumns(entity interface{}, recursive bool, skips ...string) (cols []*Column) {
-    if nil != entity {
-        et := reflect.TypeOf(entity)
-        ev := reflect.ValueOf(entity)
-        for i := 0; i < et.Elem().NumField(); i++ {
-            f := et.Elem().Field(i)
-            //fv := et.Elem().Field(i)
-            if inSlice(f.Name, skips) {
-                continue
-            }
-            x_tags := strings.Split(f.Tag.Get("xql"), ",")
-            if f.Anonymous && !recursive {
-                if x_tags[0] != "-" {
-                    sks := getSkips(x_tags)
-                    for _, c := range makeColumns(ev.Elem().Field(i).Addr().Interface(), true, sks...) {
-                        cols = append(cols, c)
-                    }
-                } else {
-                    continue
-                }
-                continue
-            }
-            c := &Column{PropertyName: f.Name}
-            if len(x_tags) < 1 {
-                c.FieldName = Camel2Underscore(f.Name)
-            } else if x_tags[0] == "-" {
-                continue
-            }
-            if x_tags[0] == "" {
-                c.FieldName = Camel2Underscore(f.Name)
-            } else {
-                c.FieldName = x_tags[0]
-            }
-            if len(x_tags) > 1 {
-                for _, x := range x_tags[1:] {
-                    switch x {
-                    case "pk":
-                        c.PrimaryKey = true
-                        //t.PrimaryKey = append(t.PrimaryKey, x)
-                    case "indexed":
-                        c.Indexed = true
-                    case "nullable":
-                        c.Nullable = true
-                    case "unique":
-                        c.Unique = true
-                    case "auto":
-                        c.Auto = true
-                    default:
-                        xs := strings.Split(x, "=")
-                        if len(xs) > 1 {
-                            switch xs[0] {
-                            case "type":
-                                c.Type = xs[1]
-                            }
-                        }
-                    }
-                }
-            }
-            json_tags := strings.Split(f.Tag.Get("json"), ",")
-            if len(json_tags) < 1 {
-                c.JTAG = c.PropertyName
-            } else if json_tags[0] != "-" {
-                if json_tags[0] == "" {
-                    c.JTAG = c.PropertyName
-                } else {
-                    c.JTAG = json_tags[0]
-                }
-            }
-            if c.Type == "" {
-                switch f.Type.Kind() {
-                case reflect.String:
-                    c.Type = "VARCHAR(32)"
-                case reflect.Int16, reflect.Uint16:
-                    c.Type = "SMALLINT"
-                case reflect.Int, reflect.Int32, reflect.Uint, reflect.Uint32:
-                    c.Type = "INTEGER"
-                case reflect.Int64, reflect.Uint64:
-                    c.Type = "BIGINT"
-                case reflect.Bool:
-                    c.Type = "BOOLEAN"
-                case reflect.Float32, reflect.Float64:
-                    c.Type = "FLOAT"
-                }
-            }
-            cols = append(cols, c)
-            //t.MappedColumns[c.FieldName] = c
-        }
-    }
-    return cols
+func (t *Table) GetConstraints() []*Constraint {
+    return t.constraints
 }
 
-func DeclareTable(name string, entity interface{}, schema ...string) *Table {
-    t := &Table{
-        TableName:      name,
-        Entity:         entity,
-        MappedColumns:  make(map[string]*Column),
-        JTaggedColumns: make(map[string]*Column),
-    }
-    if len(schema) > 0 {
-        t.Schema = schema[0]
-    }
-    if nil != entity {
-        for _, c := range makeColumns(entity, false) {
-            t.MappedColumns[c.FieldName] = c
-            t.ListedColumns = append(t.ListedColumns, c)
-            if c.JTAG != "" {
-                t.JTaggedColumns[c.JTAG] = c
-            }
-            if c.PrimaryKey {
-                t.PrimaryKey = append(t.PrimaryKey, c.FieldName)
-            }
-        }
-    }
-    return t
+func (t *Table) GetIndexes() []*Index {
+    return t.indexes
 }
 
-func (t *Table) GetColumn(name string) (*Column, bool) {
-    if c, ok := t.MappedColumns[name]; ok {
+func (t *Table) GetField(name string) (*Column, bool) {
+    if c, ok := t.m_fields[name]; ok {
         return c, true
     }
-    if c, ok := t.JTaggedColumns[name]; ok {
+    if c, ok := t.x_fields[name]; ok {
+        return c, true
+    }
+    if c, ok := t.j_fields[name]; ok {
         return c, true
     }
     return nil, false
+}
+
+// DeclareTable
+// Which declare a new Table instance according to a given entity.
+func DeclareTable(entity TableIdentified, schema ...string) *Table {
+    t := &Table{
+        entity: entity,
+        fields: makeColumns(entity, false),
+    }
+    if len(schema) > 0 {
+        t.schema = schema[0]
+    }
+    t.constraints = makeConstraints(t.fields...)
+    t.indexes = makeIndexes(t.fields...)
+    t.x_fields = make(map[string]*Column)
+    t.j_fields = make(map[string]*Column)
+    for _, f := range t.fields {
+        t.x_fields[f.FieldName] = f
+        t.m_fields[f.ElemName] = f
+        t.j_fields[f.Jtag] = f
+    }
+    return t
 }
