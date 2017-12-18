@@ -1,10 +1,11 @@
-package xql
+package examples
 
 import (
     "testing"
     "time"
     _ "github.com/lib/pq"
     "github.com/archsh/go.uuid"
+    "github.com/archsh/go.xql"
     _ "github.com/archsh/go.xql/dialects/postgres"
 )
 
@@ -17,37 +18,44 @@ type Crew struct {
     Region      string     `json:"region"  xql:"size=24,nullable=true"`
     ImdbId      string     `json:"imdbId"  xql:"size=24,nullable=false"`
     Description string     `json:"description"  xql:"type=text,size=24,nullable=false"`
-    Created     *time.Time `json:"created"  xql:"nullable=false,default=Now()"`
-    Updated     *time.Time `json:"Updated"  xql:"nullable=false,default=Now()"`
+    Created     *time.Time `json:"created"  xql:"type=timestamp,nullable=false,default=Now()"`
+    Updated     *time.Time `json:"Updated"  xql:"type=timestamp,nullable=false,default=Now()"`
 }
 
 func (c Crew) TableName() string {
     return "crews"
 }
 
-var MovieCrew = DeclareTable(&Crew{}, "deneb")
+var MovieCrew = xql.DeclareTable(&Crew{}, "")
 
 func TestCreateEngine(t *testing.T) {
     t1 := time.Now()
-    engine, e := CreateEngine("postgres",
-        "host=localhost port=5432 user=postgres password=postgres dbname=cygnuxdb sslmode=disable")
+    engine, e := xql.CreateEngine("postgres",
+        "host=localhost port=5432 user=postgres password=postgres dbname=test sslmode=disable")
     if nil != e {
         t.Fatal("Connec DB failed:> ", e)
     }
     t.Log("MovieCrew:> ", MovieCrew)
-    _ = engine.MakeSession()
+    sess := engine.MakeSession()
+    sess.Create(MovieCrew)
     t.Log("Time spent:> ", time.Now().Sub(t1))
+
 }
 
 func TestQuerySet_Insert(t *testing.T) {
     t1 := time.Now()
-    engine, e := CreateEngine("postgres",
+    engine, e := xql.CreateEngine("postgres",
         "host=localhost port=5432 user=postgres password=postgres dbname=cygnuxdb sslmode=disable")
     if nil != e {
         t.Fatal("Connec DB failed:> ", e)
     }
     t.Log("MovieCrew:> ", MovieCrew)
     sess := engine.MakeSession()
+    e = sess.Create(MovieCrew)
+    if nil != e {
+        t.Fatal("Failed to create table:>", e)
+        return
+    }
     c1 := Crew{Id: uuid.NewV4().String(), FullName: "Tom Cruse", Region: "US"}
     c2 := Crew{Id: uuid.NewV4().String(), FullName: "Hue Jackman", Region: "US"}
     n, e := sess.Query(MovieCrew).Insert(&c1, &c2)

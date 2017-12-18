@@ -3,14 +3,14 @@ package xql
 // Table ...
 // Struct defined for a table object.
 type Table struct {
-    fields       []*Column
+    columns      []*Column
     constraints  []*Constraint
     indexes      []*Index
     primary_keys []*Column
     foreign_keys []*Column
-    m_fields     map[string]*Column
-    x_fields     map[string]*Column
-    j_fields     map[string]*Column
+    m_columns    map[string]*Column
+    x_columns    map[string]*Column
+    j_columns    map[string]*Column
     entity       TableIdentified
     schema       string
 }
@@ -22,7 +22,7 @@ type TableIdentified interface {
 }
 
 // TableIgnored
-// Which allow struct to define a method Ignore() to tell ignore elements for table fields
+// Which allow struct to define a method Ignore() to tell ignore elements for table columns
 type TableIgnored interface {
     Ignore() []string
 }
@@ -53,8 +53,8 @@ func (t *Table) TableName() string {
     return t.entity.TableName()
 }
 
-func (t *Table) GetFields() []*Column {
-    return t.fields
+func (t *Table) GetColumns() []*Column {
+    return t.columns
 }
 
 func (t *Table) GetConstraints() []*Constraint {
@@ -65,14 +65,14 @@ func (t *Table) GetIndexes() []*Index {
     return t.indexes
 }
 
-func (t *Table) GetField(name string) (*Column, bool) {
-    if c, ok := t.m_fields[name]; ok {
+func (t *Table) GetColumn(name string) (*Column, bool) {
+    if c, ok := t.m_columns[name]; ok {
         return c, true
     }
-    if c, ok := t.x_fields[name]; ok {
+    if c, ok := t.x_columns[name]; ok {
         return c, true
     }
-    if c, ok := t.j_fields[name]; ok {
+    if c, ok := t.j_columns[name]; ok {
         return c, true
     }
     return nil, false
@@ -86,14 +86,14 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
         skips = et.Ignore()
     }
     t := &Table{
-        entity: entity,
-        fields: makeColumns(entity, false, skips...),
+        entity:  entity,
+        columns: makeColumns(entity, false, skips...),
     }
     if len(schema) > 0 {
         t.schema = schema[0]
     }
-    //t.constraints = makeConstraints(t.fields...)
-    //t.indexes = makeIndexes(t.fields...)
+    //t.constraints = makeConstraints(t.columns...)
+    //t.indexes = makeIndexes(t.columns...)
     if tt, ok := entity.(TableConstrainted); ok {
         t.constraints = append(t.constraints, tt.Constraints()...)
     }
@@ -101,12 +101,13 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
         t.indexes = append(t.indexes, tt.Indexes()...)
     }
 
-    t.x_fields = make(map[string]*Column)
-    t.j_fields = make(map[string]*Column)
-    for _, f := range t.fields {
-        t.x_fields[f.FieldName] = f
-        t.m_fields[f.ElemName] = f
-        t.j_fields[f.Jtag] = f
+    t.x_columns = make(map[string]*Column)
+    t.j_columns = make(map[string]*Column)
+    t.m_columns = make(map[string]*Column)
+    for _, f := range t.columns {
+        t.x_columns[f.FieldName] = f
+        t.m_columns[f.ElemName] = f
+        t.j_columns[f.Jtag] = f
     }
     return t
 }

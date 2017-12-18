@@ -31,7 +31,7 @@ func (self *Session) Create(table *Table) error {
     }
     log.Debugln("SQL:>>>", s)
     if _, e := self.db.Exec(s, args...); nil != e {
-        return e
+        return errors.New(e.Error()+":>"+s)
     } else {
         return nil
     }
@@ -61,7 +61,7 @@ func (self *Session) Query(table *Table, columns ...interface{}) *QuerySet {
             if qc, ok := c.(QueryColumn); ok {
                 qs.queries = append(qs.queries, qc)
             } else if qcn, ok := c.(string); ok {
-                if col, ok := qs.table.MappedColumns[qcn]; !ok {
+                if col, ok := qs.table.m_columns[qcn]; !ok {
                     panic("Invalid column name:" + qcn)
                 } else {
                     qs.queries = append(qs.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})

@@ -150,7 +150,7 @@ type Time time.Time
 func (s Time) Declare(props PropertySet) string {
     return "time"
 }
-//interval [ fields ] [ (p) ]	16 bytes	time interval	-178000000 years	178000000 years	1 microsecond / 14 digits
+//interval [ columns ] [ (p) ]	16 bytes	time interval	-178000000 years	178000000 years	1 microsecond / 14 digits
 type Interval time.Duration
 func (s Interval) Declare(props PropertySet) string {
     return "interval"

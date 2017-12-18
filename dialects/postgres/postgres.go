@@ -5,7 +5,6 @@ import (
     "fmt"
     "reflect"
     "strings"
-    "errors"
 )
 
 type PostgresDialect struct {
@@ -68,35 +67,52 @@ CREATE INDEX ix_public_metas_vod_albums_idx
   (idx);
  */
 
+ func makeInlineConstraint(c... *xql.Constraint) string {
+     return ""
+ }
+
+ func makeConstraint(t *xql.Table, idx int, c... *xql.Constraint) string {
+     return ""
+ }
+
+ func makeIndex(t *xql.Table, idx int, i... *xql.Index) string {
+     return ""
+ }
+
 func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
     var createSQL string
-    var table_name string = t.TableName
-    if t.Schema != "" {
-        table_name = t.Schema + "." + table_name
-    }
+    var table_name string = t.TableName()
     createSQL = "CREATE TABLE IF NOT EXISTS " + table_name + " ( "
-    var indexes []string
+    var indexes []*xql.Index
     var cols []string
-    for _, c := range t.ListedColumns {
-        if c.Type == "" {
-            return "", args, errors.New("Unknow Column Type!!!")
-        }
-        col_str := fmt.Sprintf(`"%s" %s`, c.FieldName, c.Type)
-        if ! c.Nullable {
-            col_str = fmt.Sprintf(`%s NOT NULL`, col_str)
+    for _, c := range t.GetColumns() {
+        //if c.Type == "" {
+        //    return "", args, errors.New("Unknow Column Type!!!")
+        //}
+        col_str := fmt.Sprintf(`"%s" %s`, c.FieldName, c.TypeDefine)
+        //if ! c.Nullable {
+        //    col_str = fmt.Sprintf(`%s NOT NULL`, col_str)
+        //}
+        if len(c.Constraints) > 0 {
+            col_str = fmt.Sprintf(`%s %s`, col_str, makeInlineConstraint(c.Constraints...))
         }
         cols = append(cols, col_str)
-        if c.Indexed {
-            idxs := fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_%s_%s ON %s USING btree (%s);",
-                t.TableName, c.FieldName, table_name, c.FieldName)
-            indexes = append(indexes, idxs)
-        }
+        indexes = append(indexes, c.Indexes...)
+        //if c.Indexed {
+        //    idxs := fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_%s_%s ON %s USING btree (%s);",
+        //        t.TableName(), c.FieldName, table_name, c.FieldName)
+        //    indexes = append(indexes, idxs)
+        //}
     }
-    if len(t.PrimaryKey) > 0 {
-        cols = append(cols, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", t.TableName, strings.Join(t.PrimaryKey, ",")))
+    for i, c := range t.GetConstraints() {
+        cols = append(cols, makeConstraint(t, i, c))
     }
     createSQL = createSQL + strings.Join(cols, ", ") + " );"
-    s = strings.Join(append([]string{createSQL}, indexes...), "\n")
+    indexes_strings := []string{}
+    for i, idx := range indexes {
+        indexes_strings = append(indexes_strings, makeIndex(t, i, idx))
+    }
+    s = strings.Join(append([]string{createSQL}, indexes_strings...), "\n")
     return s, args, err
 }
 
@@ -106,10 +122,7 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
         colnames = append(colnames, x.String())
     }
     s = fmt.Sprintf("SELECT %s FROM ", strings.Join(colnames, ","))
-    if t.Schema != "" {
-        s += t.Schema + "."
-    }
-    s += t.TableName
+    s += t.TableName()
     var n int
     for i, f := range filters {
         var cause string
@@ -168,17 +181,14 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
 
 func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (s string, args []interface{}, err error) {
     s = "INSERT INTO "
-    if t.Schema != "" {
-        s += t.Schema + "."
-    }
-    s += t.TableName
+    s += t.TableName()
     var cols []string
     var vals []string
     i := 0
     r := reflect.ValueOf(obj)
     if len(col) > 0 {
         for _, n := range col {
-            v, ok := t.MappedColumns[n]
+            v, ok := t.GetColumn(n)
             if ! ok {
                 continue
             }
@@ -186,19 +196,16 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
             i += 1
             cols = append(cols, n)
             vals = append(vals, fmt.Sprintf("$%d", i))
-            fv := reflect.Indirect(r).FieldByName(v.PropertyName).Interface()
+            fv := reflect.Indirect(r).FieldByName(v.ElemName).Interface()
             args = append(args, fv)
         }
     } else {
-        for k, v := range t.MappedColumns {
+        for i, v := range t.GetColumns() {
             //fmt.Println("POSTGRES Insert>2>>>",k,v.Auto,v.PrimaryKey,v)
-            if v.Auto {
-                continue
-            }
-            i += 1
-            cols = append(cols, fmt.Sprintf(`"%s"`, k))
-            vals = append(vals, fmt.Sprintf("$%d", i))
-            fv := reflect.Indirect(r).FieldByName(v.PropertyName).Interface()
+            //i += 1
+            cols = append(cols, fmt.Sprintf(`"%s"`, v.FieldName))
+            vals = append(vals, fmt.Sprintf("$%d", i+1))
+            fv := reflect.Indirect(r).FieldByName(v.ElemName).Interface()
             args = append(args, fv)
         }
     }
@@ -209,10 +216,7 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
 
 func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
     s = "UPDATE "
-    if t.Schema != "" {
-        s += t.Schema + "."
-    }
-    s += t.TableName
+    s += t.TableName()
     if len(cols) < 1 {
         panic("Empty Update MappedColumns!!!")
     }
@@ -257,10 +261,7 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
 
 func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s string, args []interface{}, err error) {
     s = "DELETE FROM "
-    if t.Schema != "" {
-        s += t.Schema + "."
-    }
-    s += t.TableName
+    s += t.TableName()
     var n int
     for i, f := range filters {
         var cause string

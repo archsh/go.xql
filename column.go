@@ -17,10 +17,10 @@ type Column struct {
     Indexed    bool // Indexed or not, on field
     Nullable   bool // Nullable constraint on field
     Unique     bool // Unique constraint on field
-    Check      interface{}  // Check constraint on field
     PrimaryKey bool //Primary Key constraint on field
     Default    interface{}
-    ForeignKey interface{}
+    Constraints []*Constraint
+    Indexes     []*Index
     table      interface{}
 }
 
@@ -89,7 +89,8 @@ func DefaultDeclare(f reflect.StructField, props PropertySet) (string, error) {
     case reflect.Float64:
         return Double(0.0).Declare(props), nil
     }
-    return "", errors.New("Unknow Type!")
+    return "", errors.New("Unknow Type of:>" + f.Name)
+
 }
 
 // makeColumn
@@ -111,8 +112,24 @@ func makeColumn(f reflect.StructField, v reflect.Value) *Column {
         field.Jtag = f.Name
     }
     field.Indexed, _ = props.PopBool("index", false)
+    if field.Indexed {
+        field.Indexes = append(field.Indexes, makeIndexes(INDEX_B_TREE, field)...)
+    }
     field.Nullable, _ = props.PopBool("nullable", false)
+    if field.Nullable == false {
+        field.Constraints = append(field.Constraints,
+            makeConstraints(CONSTRAINT_NOT_NULL, field)...)
+    }
     field.Unique, _ = props.PopBool("unique", false)
+    if field.Unique == false {
+        field.Constraints = append(field.Constraints,
+            makeConstraints(CONSTRAINT_UNIQUE, field)...)
+    }
+    field.PrimaryKey, _ = props.PopBool("primarykey", false)
+    if field.PrimaryKey == false {
+        field.Constraints = append(field.Constraints,
+            makeConstraints(CONSTRAINT_PRIMARYKEY, field)...)
+    }
     if fn, ok := props.PopString("name"); ok {
         field.FieldName = fn
     }
@@ -141,7 +158,7 @@ func makeColumns(p interface{}, recursive bool, skips ...string) []*Column {
 
     et := reflect.TypeOf(p)
     ev := reflect.ValueOf(p)
-    fields := make([]*Column,et.Elem().NumField())
+    fields := []*Column{}
     for i := 0; i < et.Elem().NumField(); i++ {
         f := et.Elem().Field(i)
         v := ev.Elem().Field(i)

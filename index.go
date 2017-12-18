@@ -13,8 +13,27 @@ const (
 )
 
 type Index struct {
-    Type uint8
-    Fields []*Column
+    Type    uint8
+    Columns []*Column
+}
+
+
+func (i Index) String() string {
+    switch i.Type {
+    case INDEX_B_TREE:
+        return ""
+    case INDEX_HASH:
+        return ""
+    case INDEX_GIST:
+        return ""
+    case INDEX_SP_GIST:
+        return ""
+    case INDEX_GIN:
+        return ""
+    case INDEX_BRIN:
+        return ""
+    }
+    return ""
 }
 
 
@@ -29,12 +48,10 @@ func makeIndexes(t uint8, fields ...interface{}) []*Index {
         }
         idx := &Index{Type:t}
         if fc, ok := f.(*Column); ok {
-            idx.Fields = []*Column{fc}
+            idx.Columns = []*Column{fc}
         }else if fcs, ok := f.([]*Column); ok {
-            idx.Fields = fcs
-        }/*else if fs, ok := f.(string); ok {
-
-        }*/else{
+            idx.Columns = fcs
+        }else{
             continue
         }
         indexes = append(indexes, idx)

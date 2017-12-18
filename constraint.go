@@ -20,23 +20,26 @@ const (
 )
 
 type Constraint struct {
-    Type  uint8
-    Fields []*Column
+    Type      uint8
+    Columns   []*Column
     Refernces []*Column
 }
 
-type ForeignKey struct {
-    Constraint
+func (c Constraint) String() string {
+    switch c.Type {
+    case CONSTRAINT_NOT_NULL:
+        return "NOT NULL"
+    case CONSTRAINT_UNIQUE:
+        return ""
+    case CONSTRAINT_PRIMARYKEY:
+        return ""
+    case CONSTRAINT_CHECK:
+        return ""
+    case CONSTRAINT_EXCLUDE:
+        return ""
+    }
+    return ""
 }
-
-type Unique struct {
-    Constraint
-}
-
-type PrimaryKey struct {
-    Constraint
-}
-
 
 func makeConstraints(t uint8, fields... interface{}) []*Constraint {
     var constraints []*Constraint
@@ -49,9 +52,9 @@ func makeConstraints(t uint8, fields... interface{}) []*Constraint {
         }
         constraint := &Constraint{Type: t}
         if fc, ok := field.(*Column); ok {
-            constraint.Fields = []*Column{fc}
+            constraint.Columns = []*Column{fc}
         }else if fcs, ok := field.([]*Column); ok {
-            constraint.Fields = fcs
+            constraint.Columns = fcs
         }else{
             continue
         }
