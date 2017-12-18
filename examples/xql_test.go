@@ -10,7 +10,7 @@ import (
 )
 
 type Category struct {
-    Id          string     `json:"id" xql:"type=uuid,pk=true"`
+    Id          string     `json:"id" xql:"type=uuid,pk=true,default=uuid_generate_v4()"`
     Name        string     `json:"name" xql:"size=24,unique=true,nullable=false"`
     Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
 }
@@ -20,7 +20,7 @@ func (c Category) TableName() string {
 }
 
 type Crew struct {
-    Id          string     `json:"id" xql:"type=uuid,primarykey=true"`
+    Id          string     `json:"id" xql:"type=uuid,primarykey=true,default=uuid_generate_v4()"`
     FullName    string     `json:"fullName" xql:"size=80,unique=true,nullable=false"`
     FirstName   string     `json:"firstName" xql:"size=24,nullable=false"`
     MiddleName  string     `json:"middleName" xql:"size=24,nullable=false"`

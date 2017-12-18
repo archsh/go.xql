@@ -164,6 +164,9 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
         //if ! c.Nullable {
         //    col_str = fmt.Sprintf(`%s NOT NULL`, col_str)
         //}
+        if c.Default != nil {
+            col_str = fmt.Sprintf(`%s DEFAULT %s`, col_str, c.Default)
+        }
         if len(c.Constraints) > 0 {
             col_str = fmt.Sprintf(`%s %s`, col_str, makeInlineConstraint(c.Constraints...))
         }
