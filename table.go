@@ -53,6 +53,10 @@ func (t *Table) TableName() string {
     return t.entity.TableName()
 }
 
+func (t *Table) BaseTableName() string {
+    return t.entity.TableName()
+}
+
 func (t *Table) GetColumns() []*Column {
     return t.columns
 }

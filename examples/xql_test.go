@@ -9,6 +9,16 @@ import (
     _ "github.com/archsh/go.xql/dialects/postgres"
 )
 
+type Category struct {
+    Id          string     `json:"id" xql:"type=uuid,pk=true"`
+    Name        string     `json:"name" xql:"size=24,unique=true,nullable=false"`
+    Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
+}
+
+func (c Category) TableName() string {
+    return "categories"
+}
+
 type Crew struct {
     Id          string     `json:"id" xql:"type=uuid,primarykey=true"`
     FullName    string     `json:"fullName" xql:"size=80,unique=true,nullable=false"`
@@ -16,7 +26,8 @@ type Crew struct {
     MiddleName  string     `json:"middleName" xql:"size=24,nullable=false"`
     LastName    string     `json:"lastName" xql:"size=24,nullable=false"`
     Region      string     `json:"region"  xql:"size=24,nullable=true"`
-    ImdbId      string     `json:"imdbId"  xql:"size=24,nullable=false"`
+    Age         int         `json:"age" xql:"check=(age>18)"`
+    CategoryId  string     `json:"categoryId"  xql:"type=uuid,fk=categories.id,ondelete=CASCADE,nullable=false"`
     Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
     Created     *time.Time `json:"created"  xql:"type=timestamp,nullable=false,default=Now()"`
     Updated     *time.Time `json:"Updated"  xql:"type=timestamp,nullable=false,default=Now()"`
@@ -26,7 +37,8 @@ func (c Crew) TableName() string {
     return "crews"
 }
 
-var MovieCrew = xql.DeclareTable(&Crew{}, "")
+var MovieCrew = xql.DeclareTable(&Crew{}, )
+var MovieCategory = xql.DeclareTable(&Category{})
 
 func TestCreateEngine(t *testing.T) {
     t1 := time.Now()
@@ -45,12 +57,17 @@ func TestCreateEngine(t *testing.T) {
 func TestQuerySet_Insert(t *testing.T) {
     t1 := time.Now()
     engine, e := xql.CreateEngine("postgres",
-        "host=localhost port=5432 user=postgres password=postgres dbname=cygnuxdb sslmode=disable")
+        "host=localhost port=5432 user=postgres password=postgres dbname=test sslmode=disable")
     if nil != e {
         t.Fatal("Connec DB failed:> ", e)
     }
     t.Log("MovieCrew:> ", MovieCrew)
     sess := engine.MakeSession()
+    e = sess.Create(MovieCategory)
+    if nil != e {
+        t.Fatal("Failed to create table:>", e)
+        return
+    }
     e = sess.Create(MovieCrew)
     if nil != e {
         t.Fatal("Failed to create table:>", e)

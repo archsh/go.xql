@@ -104,6 +104,7 @@ func makeColumn(f reflect.StructField, v reflect.Value) *Column {
         FieldName:Camel2Underscore(f.Name),
         ElemName:f.Name,
         Type: f.Type,
+        PropertySet: props,
     }
     jtag := f.Tag.Get("json")
     if jtag != "" {
@@ -121,14 +122,32 @@ func makeColumn(f reflect.StructField, v reflect.Value) *Column {
             makeConstraints(CONSTRAINT_NOT_NULL, field)...)
     }
     field.Unique, _ = props.PopBool("unique", false)
-    if field.Unique == false {
+    if field.Unique {
         field.Constraints = append(field.Constraints,
             makeConstraints(CONSTRAINT_UNIQUE, field)...)
     }
     field.PrimaryKey, _ = props.PopBool("primarykey", false)
-    if field.PrimaryKey == false {
+    if ! field.PrimaryKey {
+        field.PrimaryKey, _ = props.PopBool("pk", false)
+    }
+    if field.PrimaryKey {
         field.Constraints = append(field.Constraints,
             makeConstraints(CONSTRAINT_PRIMARYKEY, field)...)
+    }
+    if fk, ok := props.GetString("foreignkey", ); ok && fk != "" {
+        field.Constraints = append(field.Constraints,
+            makeConstraints(CONSTRAINT_FOREIGNKEY, field)...)
+    }else if fk, ok := props.GetString("fk", ); ok && fk != "" {
+        field.Constraints = append(field.Constraints,
+            makeConstraints(CONSTRAINT_FOREIGNKEY, field)...)
+    }
+    if check, ok := props.GetString("check"); ok && check != "" {
+        field.Constraints = append(field.Constraints,
+            makeConstraints(CONSTRAINT_CHECK, field)...)
+    }
+    if exclude, ok := props.GetString("exclude"); ok && exclude != "" {
+        field.Constraints = append(field.Constraints,
+            makeConstraints(CONSTRAINT_EXCLUDE, field)...)
     }
     if fn, ok := props.PopString("name"); ok {
         field.FieldName = fn

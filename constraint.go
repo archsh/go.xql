@@ -1,12 +1,12 @@
 package xql
 
 // Constraint Types:
-//  - Check
-//  - Not-Null
+//  - CHECK
+//  - NOT NULL
 //  - UNIQUE
 //  - PRIMARY KEY
 //  - FOREIGN KEY
-//  - Exclusion
+//  - EXCLUDE
 
 const (
     CONSTRAINT_NONE uint8 = iota
@@ -23,22 +23,9 @@ type Constraint struct {
     Type      uint8
     Columns   []*Column
     Refernces []*Column
-}
-
-func (c Constraint) String() string {
-    switch c.Type {
-    case CONSTRAINT_NOT_NULL:
-        return "NOT NULL"
-    case CONSTRAINT_UNIQUE:
-        return ""
-    case CONSTRAINT_PRIMARYKEY:
-        return ""
-    case CONSTRAINT_CHECK:
-        return ""
-    case CONSTRAINT_EXCLUDE:
-        return ""
-    }
-    return ""
+    Statement string
+    OnDelete  string
+    OnUpdate  string
 }
 
 func makeConstraints(t uint8, fields... interface{}) []*Constraint {
@@ -53,6 +40,28 @@ func makeConstraints(t uint8, fields... interface{}) []*Constraint {
         constraint := &Constraint{Type: t}
         if fc, ok := field.(*Column); ok {
             constraint.Columns = []*Column{fc}
+            switch t {
+            case CONSTRAINT_EXCLUDE:
+                if exclude, ok := fc.GetString("exclude"); ok && exclude != "" {
+                    constraint.Statement = exclude
+                }
+            case CONSTRAINT_CHECK:
+                if check, ok := fc.GetString("check"); ok && check != "" {
+                    constraint.Statement = check
+                }else{
+                    continue
+                }
+            case CONSTRAINT_FOREIGNKEY:
+                constraint.OnDelete, _ = fc.GetString("ondelete")
+                constraint.OnUpdate, _ = fc.GetString("onupdate")
+                if fk, ok := fc.GetString("fk"); ok && fk != "" {
+                    constraint.Statement = fk
+                }else if fk, ok := fc.GetString("foreignkey"); ok && fk != "" {
+                    constraint.Statement = fk
+                }else{
+                    continue
+                }
+            }
         }else if fcs, ok := field.([]*Column); ok {
             constraint.Columns = fcs
         }else{

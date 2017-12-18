@@ -72,15 +72,82 @@ CREATE INDEX ix_public_metas_vod_albums_idx
  */
 
  func makeInlineConstraint(c... *xql.Constraint) string {
-     return ""
+     constraints := []string{}
+     for _, x := range c {
+         switch x.Type {
+         case xql.CONSTRAINT_NOT_NULL:
+             constraints = append(constraints, "NOT NULL")
+         case xql.CONSTRAINT_UNIQUE:
+             constraints = append(constraints, "UNIQUE ")
+         case xql.CONSTRAINT_CHECK:
+             constraints = append(constraints, fmt.Sprintf("CHECK (%s)", x.Statement))
+         //case xql.CONSTRAINT_EXCLUDE:
+             //constraints = append(constraints, "NOT NUL")
+         case xql.CONSTRAINT_FOREIGNKEY:
+             ondelete := ""
+             onupdate := ""
+             if x.OnDelete != "" {
+                 ondelete = "ON DELETE "+x.OnDelete
+             }
+             if x.OnUpdate != "" {
+                 onupdate = "ON UPDATE "+x.OnUpdate
+             }
+             xs := strings.Split(x.Statement, ".")
+             if len(xs) > 1 {
+                 tt := strings.Join(xs[:len(xs)-1],".")
+                 tc := xs[len(xs)-1]
+                 constraints = append(constraints, fmt.Sprintf("REFERENCES %s (%s) %s %s",tt, tc, onupdate, ondelete))
+             }else{
+                 constraints = append(constraints, fmt.Sprintf("REFERENCES %s %s %s",xs[0], onupdate, ondelete))
+             }
+
+         case xql.CONSTRAINT_PRIMARYKEY:
+             constraints = append(constraints, "PRIMARY KEY")
+         }
+     }
+     if len(constraints) < 1 {
+         return ""
+     }
+     return strings.Join(constraints, " ")
  }
 
- func makeConstraint(t *xql.Table, idx int, c... *xql.Constraint) string {
-     return ""
+ func makeConstraints(t *xql.Table, idx int, c... *xql.Constraint) (ret []string) {
+     for _, x := range c {
+         fields := []string{}
+         for _,cc := range x.Columns {
+             fields = append(fields, cc.FieldName)
+         }
+         field_str := strings.Join(fields, ",")
+         switch x.Type {
+         //case xql.CONSTRAINT_NOT_NULL:
+         //    ret = append(ret, fmt.Sprintf("NOT NUL"))
+         case xql.CONSTRAINT_UNIQUE:
+             ret = append(ret, fmt.Sprintf("CONSTRAINT UNIQUE (%s)", field_str))
+         case xql.CONSTRAINT_CHECK:
+             ret = append(ret, fmt.Sprintf("CONSTRAINT CHECK (%s)", x.Statement))
+         case xql.CONSTRAINT_EXCLUDE:
+             ret = append(ret, fmt.Sprintf("CONSTRAINT EXCLUDE USING %s", x.Statement))
+         case xql.CONSTRAINT_FOREIGNKEY:
+             ondelete := ""
+             onupdate := ""
+             if x.OnDelete != "" {
+                 ondelete = "ON DELETE "+x.OnDelete
+             }
+             if x.OnUpdate != "" {
+                 onupdate = "ON UPDATE "+x.OnUpdate
+             }
+             ret = append(ret,
+                 fmt.Sprintf("CONSTRAINT FOREIGN KEY (%s) REFERENCES %s %s %s",
+                     field_str, x.Statement, onupdate, ondelete))
+         case xql.CONSTRAINT_PRIMARYKEY:
+             ret = append(ret, fmt.Sprintf("CONSTRAINT PRIMARY KEY (%s)", field_str))
+         }
+     }
+     return
  }
 
- func makeIndex(t *xql.Table, idx int, i... *xql.Index) string {
-     return ""
+ func makeIndexes(t *xql.Table, idx int, i... *xql.Index) (ret []string) {
+     return
  }
 
 func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
@@ -108,14 +175,9 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
         //    indexes = append(indexes, idxs)
         //}
     }
-    for i, c := range t.GetConstraints() {
-        cols = append(cols, makeConstraint(t, i, c))
-    }
+    cols = append(cols, makeConstraints(t, 0, t.GetConstraints()...)...)
     createSQL = createSQL + strings.Join(cols, ", ") + " );"
-    indexes_strings := []string{}
-    for i, idx := range indexes {
-        indexes_strings = append(indexes_strings, makeIndex(t, i, idx))
-    }
+    indexes_strings := makeIndexes(t, 0, indexes...)
     s = strings.Join(append([]string{createSQL}, indexes_strings...), "\n")
     return s, args, err
 }
