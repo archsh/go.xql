@@ -4,7 +4,7 @@ import (
     "reflect"
     "strings"
     "errors"
-    "fmt"
+    "time"
 )
 
 type Column struct {
@@ -28,21 +28,66 @@ type Declarable interface {
     Declare(props PropertySet) string
 }
 
-func GenericDeclare(f reflect.StructField, props PropertySet) (string, error) {
+func DefaultDeclare(f reflect.StructField, props PropertySet) (string, error) {
+    if t, ok := props.GetString("type"); ok {
+        t = strings.ToLower(t)
+        switch t {
+        case "varchar", "string":
+            return Varchar("").Declare(props), nil
+        case "char":
+            return Char("").Declare(props), nil
+        case "text":
+            return Text("").Declare(props), nil
+        case "int", "integer":
+            return Integer(0).Declare(props), nil
+        case "smallint","smallinteger":
+            return SmallInteger(0).Declare(props), nil
+        case "bigint","biginteger":
+            return BigInteger(0).Declare(props), nil
+        case "serial":
+            return Serial(0).Declare(props), nil
+        case "bigserial":
+            return BigSerial(0).Declare(props), nil
+        case "real", "float":
+            return Real(0.0).Declare(props), nil
+        case "double":
+            return Double(0.0).Declare(props), nil
+        case "bool", "boolean":
+            return Boolean(false).Declare(props), nil
+        case "date":
+            return Date(time.Time{}).Declare(props), nil
+        case "time":
+            return Time(time.Time{}).Declare(props), nil
+        case "datetime", "timestamp":
+            return TimeStamp(time.Time{}).Declare(props), nil
+        case "decimal","numeric":
+            return Decimal("").Declare(props), nil
+        case "uuid":
+            return UUID("").Declare(props), nil
+        }
+    }
     switch f.Type.Kind() {
     case reflect.String:
-        size, _ := props.GetUInt("size", 32)
-        return fmt.Sprintf("VARCHAR(%d)", size), nil
+        //size, _ := props.GetUInt("size", 32)
+        //return fmt.Sprintf("VARCHAR(%d)", size), nil
+        return Varchar("").Declare(props), nil
     case reflect.Int16, reflect.Uint16:
-        return "SMALLINT", nil
+        //return "SMALLINT", nil
+        return SmallInteger(0).Declare(props), nil
     case reflect.Int, reflect.Int32, reflect.Uint, reflect.Uint32:
-        return "INTEGER", nil
+        //return "INTEGER", nil
+        return Integer(0).Declare(props), nil
     case reflect.Int64, reflect.Uint64:
-        return "BIGINT", nil
+        //return "BIGINT", nil
+        return BigInteger(0).Declare(props), nil
     case reflect.Bool:
-        return "BOOLEAN", nil
-    case reflect.Float32, reflect.Float64:
-        return "FLOAT", nil
+        return Boolean(false).Declare(props), nil
+        //return "BOOLEAN", nil
+    case reflect.Float32:
+        //return "FLOAT", nil
+        return Real(0.0).Declare(props), nil
+    case reflect.Float64:
+        return Double(0.0).Declare(props), nil
     }
     return "", errors.New("Unknow Type!")
 }
@@ -78,7 +123,7 @@ func makeColumn(f reflect.StructField, v reflect.Value) *Column {
     if p, ok := v.Interface().(Declarable); ok {
         field.TypeDefine = p.Declare(props)
     }else{
-        if d, e := GenericDeclare(f, props); nil == e {
+        if d, e := DefaultDeclare(f, props); nil == e {
             field.TypeDefine = d
         }else{
             panic(e)

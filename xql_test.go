@@ -9,19 +9,23 @@ import (
 )
 
 type Crew struct {
-    Id          string     `json:"id"`
-    FullName    string     `json:"fullName" xql:"fullname"`
-    FirstName   string     `json:"firstName"`
-    MiddleName  string     `json:"middleName"`
-    LastName    string     `json:"lastName"`
-    Region      string     `json:"region"`
-    ImdbId      string     `json:"imdbId"`
-    Description string     `json:"description"`
-    Created     *time.Time `json:"created"`
-    Updated     *time.Time `json:"Updated"`
+    Id          string     `json:"id" xql:"type=uuid,primarykey=true"`
+    FullName    string     `json:"fullName" xql:"size=80,unique=true,nullable=false"`
+    FirstName   string     `json:"firstName" xql:"size=24,nullable=false"`
+    MiddleName  string     `json:"middleName" xql:"size=24,nullable=false"`
+    LastName    string     `json:"lastName" xql:"size=24,nullable=false"`
+    Region      string     `json:"region"  xql:"size=24,nullable=true"`
+    ImdbId      string     `json:"imdbId"  xql:"size=24,nullable=false"`
+    Description string     `json:"description"  xql:"type=text,size=24,nullable=false"`
+    Created     *time.Time `json:"created"  xql:"nullable=false,default=Now()"`
+    Updated     *time.Time `json:"Updated"  xql:"nullable=false,default=Now()"`
 }
 
-var MovieCrew = DeclareTable("metas_crews", &Crew{}, "deneb")
+func (c Crew) TableName() string {
+    return "crews"
+}
+
+var MovieCrew = DeclareTable(&Crew{}, "deneb")
 
 func TestCreateEngine(t *testing.T) {
     t1 := time.Now()

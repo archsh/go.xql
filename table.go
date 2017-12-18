@@ -27,29 +27,16 @@ type TableIgnored interface {
     Ignore() []string
 }
 
-// TablePrimaryKeyed
-// Which allow struct to define a method PrimaryKey() to have multiple primary keys
-type TablePrimaryKeyed interface {
-    PrimaryKey() []string
+// TableConstrainted
+// Which allow struct to define a method Constraints() to cunstomize table constraints
+type TableConstrainted interface {
+    Constraints() []*Constraint
 }
 
-// TableUniqued
-// Which allow struct to define a method Unique() to define unique constraint with multiple fields
-type TableUniqued interface {
-    Unique() []string
-}
-
-
-// TableChecked
-// Which allow struct to define a method Check() to define customized check constraint on table
-type TableChecked interface {
-    Check() []string
-}
-
-// TableExcluded
-// Which allow struct to define a method Exclude() to define a customized exclude constraint on table
-type TableExcluded interface {
-    Exclude() []string
+// TableIndexed
+// Which allow struct to define a method Indexes() to define table indexes
+type TableIndexed interface {
+    Indexes() []*Index
 }
 
 // TableInitRequired
@@ -94,15 +81,26 @@ func (t *Table) GetField(name string) (*Column, bool) {
 // DeclareTable
 // Which declare a new Table instance according to a given entity.
 func DeclareTable(entity TableIdentified, schema ...string) *Table {
+    var skips []string
+    if et, ok := entity.(TableIgnored); ok {
+        skips = et.Ignore()
+    }
     t := &Table{
         entity: entity,
-        fields: makeColumns(entity, false),
+        fields: makeColumns(entity, false, skips...),
     }
     if len(schema) > 0 {
         t.schema = schema[0]
     }
-    t.constraints = makeConstraints(t.fields...)
-    t.indexes = makeIndexes(t.fields...)
+    //t.constraints = makeConstraints(t.fields...)
+    //t.indexes = makeIndexes(t.fields...)
+    if tt, ok := entity.(TableConstrainted); ok {
+        t.constraints = append(t.constraints, tt.Constraints()...)
+    }
+    if tt, ok := entity.(TableIndexed); ok {
+        t.indexes = append(t.indexes, tt.Indexes()...)
+    }
+
     t.x_fields = make(map[string]*Column)
     t.j_fields = make(map[string]*Column)
     for _, f := range t.fields {
