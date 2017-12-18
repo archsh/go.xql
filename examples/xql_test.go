@@ -29,8 +29,8 @@ type Crew struct {
     Age         int         `json:"age" xql:"check=(age>18)"`
     CategoryId  string     `json:"categoryId"  xql:"type=uuid,fk=categories.id,ondelete=CASCADE,nullable=false"`
     Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
-    Created     *time.Time `json:"created"  xql:"type=timestamp,nullable=false,default=Now()"`
-    Updated     *time.Time `json:"Updated"  xql:"type=timestamp,nullable=false,default=Now()"`
+    Created     *time.Time `json:"created"  xql:"type=timestamp,nullable=true,default=Now()"`
+    Updated     *time.Time `json:"Updated"  xql:"type=timestamp,nullable=true,default=Now()"`
 }
 
 func (c Crew) TableName() string {
@@ -73,13 +73,19 @@ func TestQuerySet_Insert(t *testing.T) {
         t.Fatal("Failed to create table:>", e)
         return
     }
-    c1 := Crew{Id: uuid.NewV4().String(), FullName: "Tom Cruse", Region: "US"}
-    c2 := Crew{Id: uuid.NewV4().String(), FullName: "Hue Jackman", Region: "US"}
-    n, e := sess.Query(MovieCrew).Insert(&c1, &c2)
-    if nil != e {
+    c := Category{Id:uuid.NewV4().String(), Name:"Test"}
+    c1 := Crew{Id: uuid.NewV4().String(), FullName: "Tom Cruse", Region: "US", Age: 19, CategoryId:c.Id}
+    c2 := Crew{Id: uuid.NewV4().String(), FullName: "Hue Jackman", Region: "US", Age:16, CategoryId:c.Id}
+    if n, e := sess.Query(MovieCategory).Insert(&c); nil != e {
         t.Fatal("Insert failed:> ", e)
+    }else{
+        t.Log("Inserted Category: ", n, c)
     }
-    t.Log("Insert lines:>", n)
+    if n, e := sess.Query(MovieCrew).Insert(&c1, &c2); nil != e {
+        t.Fatal("Insert failed:> ", e)
+    }else{
+        t.Log("Inserted Crew: ", n, c1,c2)
+    }
     t.Log("Time spent:> ", time.Now().Sub(t1))
 }
 
