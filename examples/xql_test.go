@@ -17,7 +17,7 @@ type Crew struct {
     LastName    string     `json:"lastName" xql:"size=24,nullable=false"`
     Region      string     `json:"region"  xql:"size=24,nullable=true"`
     ImdbId      string     `json:"imdbId"  xql:"size=24,nullable=false"`
-    Description string     `json:"description"  xql:"type=text,size=24,nullable=false"`
+    Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
     Created     *time.Time `json:"created"  xql:"type=timestamp,nullable=false,default=Now()"`
     Updated     *time.Time `json:"Updated"  xql:"type=timestamp,nullable=false,default=Now()"`
 }

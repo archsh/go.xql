@@ -6,6 +6,7 @@ import (
 
 type IDialect interface {
     Create(*Table, ...interface{}) (string, []interface{}, error)
+    Drop(*Table) (error)
     Select(*Table, []QueryColumn, []QueryFilter, []QueryOrder, int64, int64) (string, []interface{}, error)
     Insert(*Table, interface{}, ...string) (string, []interface{}, error)
     Update(*Table, []QueryFilter, ...UpdateColumn) (string, []interface{}, error)

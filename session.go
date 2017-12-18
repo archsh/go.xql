@@ -4,7 +4,6 @@ import (
     "errors"
     "database/sql"
     "fmt"
-    log "github.com/Sirupsen/logrus"
 )
 
 type Session struct {
@@ -29,7 +28,7 @@ func (self *Session) Create(table *Table) error {
     if nil != e {
         return e
     }
-    log.Debugln("SQL:>>>", s)
+    //log.Debugln("SQL:>>>", s)
     if _, e := self.db.Exec(s, args...); nil != e {
         return errors.New(e.Error()+":>"+s)
     } else {
@@ -113,12 +112,12 @@ func (self *Session) Rollback() error {
 func (self *Session) doExec(query string, args ...interface{}) (sql.Result, error) {
     if self.tx != nil {
         if self.verbose {
-            log.Debugln("doExec in Tx: ", query, args)
+            //log.Debugln("doExec in Tx: ", query, args)
         }
         return self.tx.Exec(query, args...)
     } else {
         if self.verbose {
-            log.Debugln("doExec in DB: ", query, args)
+            //log.Debugln("doExec in DB: ", query, args)
         }
         return self.db.Exec(query, args...)
     }
@@ -128,12 +127,12 @@ func (self *Session) doExec(query string, args ...interface{}) (sql.Result, erro
 func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, error) {
     if self.tx != nil {
         if self.verbose {
-            log.Debugln("doQuery in Tx: ", query, args)
+            //log.Debugln("doQuery in Tx: ", query, args)
         }
         return self.tx.Query(query, args...)
     } else {
         if self.verbose {
-            log.Debugln("doQuery in DB: ", query, args)
+            //log.Debugln("doQuery in DB: ", query, args)
         }
         return self.db.Query(query, args...)
     }
@@ -143,12 +142,12 @@ func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, erro
 func (self *Session) doQueryRow(query string, args ...interface{}) *sql.Row {
     if self.tx != nil {
         if self.verbose {
-            log.Debugln("doQueryRow in Tx: ", query, args)
+            //log.Debugln("doQueryRow in Tx: ", query, args)
         }
         return self.tx.QueryRow(query, args...)
     } else {
         if self.verbose {
-            log.Debugln("doQueryRow in Db: ", query, args)
+            //log.Debugln("doQueryRow in Db: ", query, args)
         }
         return self.db.QueryRow(query, args...)
     }

@@ -10,6 +10,10 @@ import (
 type PostgresDialect struct {
 }
 
+func (pb PostgresDialect) Drop(t *xql.Table) error {
+    return nil
+}
+
 /*
 -- Table: metas_vod_albums
 

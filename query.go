@@ -2,7 +2,6 @@ package xql
 
 import (
     "errors"
-    //log "github.com/Sirupsen/logrus"
     "reflect"
     "database/sql"
     "fmt"
