@@ -4,9 +4,14 @@ import (
     "strings"
     "database/sql"
     "database/sql/driver"
+    "github.com/archsh/go.xql"
 )
 
 type HSTORE map[string]interface{}
+
+func (h HSTORE) Declare(props xql.PropertySet) string {
+    return "hstore"
+}
 
 // escapes and quotes hstore keys/values
 // s should be a sql.NullString or string

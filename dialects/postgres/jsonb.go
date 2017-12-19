@@ -5,7 +5,22 @@ import (
     "reflect"
     "database/sql/driver"
     "encoding/json"
+    "github.com/archsh/go.xql"
 )
+
+type JSON struct {
+
+}
+
+func (j JSON) Declare(props xql.PropertySet) string {
+    return "json"
+}
+
+type JSONB JSON 
+
+func (j JSONB) Declare(props xql.PropertySet) string {
+    return "JSONB"
+}
 
 func JSONB_Scan(dest interface{}, src interface{}) error {
     if nil == src {

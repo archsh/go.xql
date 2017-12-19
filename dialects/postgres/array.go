@@ -6,12 +6,33 @@ import (
     "fmt"
     "regexp"
     "database/sql/driver"
+    "github.com/archsh/go.xql"
 )
 
 type StringArray []string
+
+func (h StringArray) Declare(props xql.PropertySet) string {
+    size,_ := props.GetInt("size", 32)
+    return fmt.Sprintf("varchar(%d)[]",size) 
+}
+
 type IntegerArray []int
+
+func (h IntegerArray) Declare(props xql.PropertySet) string {
+    return "integer[]"
+}
+
 type SmallIntegerArray []int16
+
+func (h SmallIntegerArray) Declare(props xql.PropertySet) string {
+    return "smallint[]"
+}
+
 type BoolArray []bool
+
+func (h BoolArray) Declare(props xql.PropertySet) string {
+    return "bool[]"
+}
 
 // PARSING ARRAYS
 // SEE http://www.postgresql.org/docs/9.1/static/arrays.html#ARRAYS-IO
