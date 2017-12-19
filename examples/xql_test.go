@@ -11,7 +11,7 @@ import (
 
 type Category struct {
     Id          string     `json:"id" xql:"type=uuid,pk=true,default=uuid_generate_v4()"`
-    Name        string     `json:"name" xql:"size=24,unique=true,nullable=false"`
+    Name        string     `json:"name" xql:"size=24,unique=true,nullable=false,index=true"`
     Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
 }
 
@@ -21,7 +21,7 @@ func (c Category) TableName() string {
 
 type Crew struct {
     Id          string     `json:"id" xql:"type=uuid,primarykey=true,default=uuid_generate_v4()"`
-    FullName    string     `json:"fullName" xql:"size=80,unique=true,nullable=false"`
+    FullName    string     `json:"fullName" xql:"size=80,unique=true,nullable=false,index=true"`
     FirstName   string     `json:"firstName" xql:"size=24,nullable=false"`
     MiddleName  string     `json:"middleName" xql:"size=24,nullable=false"`
     LastName    string     `json:"lastName" xql:"size=24,nullable=false"`

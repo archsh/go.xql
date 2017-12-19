@@ -78,7 +78,7 @@ CREATE INDEX ix_public_metas_vod_albums_idx
          case xql.CONSTRAINT_NOT_NULL:
              constraints = append(constraints, "NOT NULL")
          case xql.CONSTRAINT_UNIQUE:
-             constraints = append(constraints, "UNIQUE ")
+             constraints = append(constraints, "UNIQUE")
          case xql.CONSTRAINT_CHECK:
              constraints = append(constraints, fmt.Sprintf("CHECK (%s)", x.Statement))
          //case xql.CONSTRAINT_EXCLUDE:
@@ -147,6 +147,31 @@ CREATE INDEX ix_public_metas_vod_albums_idx
  }
 
  func makeIndexes(t *xql.Table, idx int, i... *xql.Index) (ret []string) {
+     for j, ii := range i {
+         fs := []string{}
+         for _, c := range ii.Columns {
+             fs = append(fs, c.FieldName)
+         }
+         tp := ""
+         switch ii.Type {
+         case xql.INDEX_B_TREE:
+             tp = "USING btree"
+         case xql.INDEX_HASH:
+             tp = "USING hash"
+         case xql.INDEX_BRIN:
+             tp = "USING brin"
+         case xql.INDEX_GIST:
+             tp = "USING gist"
+         case xql.INDEX_SP_GIST:
+             tp = "USING sp-gist"
+         case xql.INDEX_GIN:
+             tp = "USING gin"
+         }
+         // CREATE INDEX test2_mm_idx ON test2 (major, minor);
+         s := fmt.Sprintf("CREATE INDEX %s_%d_idx ON %s %s (%s);",
+             t.BaseTableName(), idx+j, t.BaseTableName(), tp, strings.Join(fs, ","))
+         ret = append(ret, s)
+     }
      return
  }
 
@@ -180,6 +205,7 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
     }
     cols = append(cols, makeConstraints(t, 0, t.GetConstraints()...)...)
     createSQL = createSQL + strings.Join(cols, ", ") + " );"
+    indexes = append(indexes, t.GetIndexes()...)
     indexes_strings := makeIndexes(t, 0, indexes...)
     s = strings.Join(append([]string{createSQL}, indexes_strings...), "\n")
     return s, args, err

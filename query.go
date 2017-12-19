@@ -270,9 +270,6 @@ func (self *QuerySet) Delete() (int64, error) {
 }
 
 func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
-    //log.Debugln("Insert:> ", objs)
-    //log.Debugln("Table:> ", self.table)
-    //var ret sql.Result
     var rows int64 = 0
     var cols []string
     if len(self.queries) > 0 {
@@ -281,10 +278,11 @@ func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
         }
     }
     for _, obj := range objs {
-        //log.Debugln("reflect.TypeOf(obj)>", reflect.TypeOf(obj))
-        //log.Debugln("reflect.TypeOf(self.table.Entity)>", reflect.TypeOf(self.table.Entity))
         if reflect.TypeOf(obj) != reflect.TypeOf(self.table.entity) {
             return 0, errors.New("Invalid data type.")
+        }
+        if pobj, ok := obj.(TablePreInsert); ok {
+            pobj.PreInsert(self.table, self.session)
         }
         s, args, err := self.session.getDialect().Insert(self.table, obj, cols...)
         if nil != err {
@@ -294,17 +292,9 @@ func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
         if nil != err {
             return 0, err
         } else {
-            //if nil != ret {
-            //    n, e := ret.LastInsertId()
-            //    if nil == e {
-            //        rows += n
-            //    }else{
-            //        rows += 1
-            //    }
-            //    //log.Debugln("Insert:> ", n)
-            //}else{
-            //    rows += 1
-            //}
+            if pobj, ok := obj.(TablePostInsert); ok {
+                pobj.PostInsert(self.table, self.session)
+            }
             rows += 1
         }
     }

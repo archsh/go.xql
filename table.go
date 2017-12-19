@@ -7,7 +7,6 @@ type Table struct {
     constraints  []*Constraint
     indexes      []*Index
     primary_keys []*Column
-    foreign_keys []*Column
     m_columns    map[string]*Column
     x_columns    map[string]*Column
     j_columns    map[string]*Column
@@ -39,12 +38,31 @@ type TableIndexed interface {
     Indexes() []*Index
 }
 
-// TableInitRequired
+// TablePreInsert
 // Which entity implemented will be called when xql create a new struct instance.
-type TableInitRequired interface {
-    Initialize()
+type TablePreInsert interface {
+    PreInsert(*Table, *Session)
 }
 
+type TabelPreUpdate interface {
+    PreUpdate(*Table, *Session)
+}
+
+type TablePreDelete interface {
+    PreDelete(*Table, *Session)
+}
+
+type TablePostInsert interface {
+    PostInsert(*Table, *Session)
+}
+
+type TablePostUpdate interface {
+    PostUpdate(*Table, *Session)
+}
+
+type TablePostDelete interface {
+    PostDelete(*Table, *Session)
+}
 
 func (t *Table) TableName() string {
     if t.schema != "" {

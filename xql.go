@@ -26,6 +26,12 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
     if len(schema) > 0 {
         t.schema = schema[0]
     }
+    for _, c := range t.columns {
+        if c.PrimaryKey {
+            t.primary_keys = append(t.primary_keys, c)
+        }
+    }
+
     //t.constraints = makeConstraints(t.columns...)
     //t.indexes = makeIndexes(t.columns...)
     if tt, ok := entity.(TableConstrainted); ok {
