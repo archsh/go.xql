@@ -8,7 +8,6 @@ import (
 
 type HSTORE map[string]interface{}
 
-
 // escapes and quotes hstore keys/values
 // s should be a sql.NullString or string
 func hQuote(s interface{}) string {
@@ -115,5 +114,3 @@ func (h HSTORE) Value() (driver.Value, error) {
     }
     return []byte(strings.Join(parts, ",")), nil
 }
-
-

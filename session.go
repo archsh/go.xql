@@ -4,45 +4,60 @@ import (
     "errors"
     "database/sql"
     "fmt"
-    log "github.com/Sirupsen/logrus"
 )
 
 type Session struct {
     driverName string
-    db *sql.DB
-    tx *sql.Tx
-    verbose bool
+    dialect    IDialect
+    db         *sql.DB
+    tx         *sql.Tx
+    verbose    bool
 }
 
 func (self *Session) getDialect() IDialect {
+    if nil != self.dialect {
+        return self.dialect
+    }
     if s, ok := _builtin_dialects[self.driverName]; ok {
+        self.dialect = s
         return s
-    }else{
+    } else {
         panic(fmt.Sprintf("Dialect '%s' not registered! ", self.driverName))
     }
     return nil
 }
 
-func (self *Session) Create(table *Table) error {
-    dialect := self.getDialect()
-    s, args, e := dialect.Create(table)
+func (self *Session) Drop(table *Table, force bool) error {
+    s, args, e := self.getDialect().Drop(table, force)
     if nil != e {
         return e
     }
-    log.Debugln("SQL:>>>", s)
     if _, e := self.db.Exec(s, args...); nil != e {
+        return errors.New(e.Error()+":>"+s)
+    } else {
+        return nil
+    }
+}
+
+func (self *Session) Create(table *Table) error {
+    s, args, e := self.getDialect().Create(table)
+    if nil != e {
         return e
-    }else{
+    }
+    //log.Debugln("SQL:>>>", s)
+    if _, e := self.db.Exec(s, args...); nil != e {
+        return errors.New(e.Error()+":>"+s)
+    } else {
         return nil
     }
     //log.Debugln("SQL:>>>", s)
     //return e
 }
 
-func (self *Session)Exec(s string) error {
+func (self *Session) Exec(s string) error {
     if _, e := self.db.Exec(s); nil != e {
         return e
-    }else{
+    } else {
         return nil
     }
 }
@@ -54,24 +69,24 @@ func (self *Session) Close() {
 }
 
 func (self *Session) Query(table *Table, columns ...interface{}) *QuerySet {
-    qs := &QuerySet{session:self, offset:-1, limit:-1}
+    qs := &QuerySet{session: self, offset: -1, limit: -1}
     qs.table = table
     if len(columns) > 0 {
         for _, c := range columns {
             if qc, ok := c.(QueryColumn); ok {
                 qs.queries = append(qs.queries, qc)
-            }else if qcn, ok := c.(string); ok {
-                if col, ok := qs.table.MappedColumns[qcn]; !ok {
-                    panic("Invalid column name:"+qcn)
-                }else{
-                    qs.queries = append(qs.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
+            } else if qcn, ok := c.(string); ok {
+                if col, ok := qs.table.m_columns[qcn]; !ok {
+                    panic("Invalid column name:" + qcn)
+                } else {
+                    qs.queries = append(qs.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
                 }
-            }else{
+            } else {
                 panic("Unsupported parameter type!")
             }
 
         }
-    }else{
+    } else {
         //for _, col := range qs.table.MappedColumns {
         //    qs.queries = append(qs.queries, QueryColumn{FieldName:col.FieldName, Alias:col.FieldName})
         //}
@@ -112,10 +127,14 @@ func (self *Session) Rollback() error {
 
 func (self *Session) doExec(query string, args ...interface{}) (sql.Result, error) {
     if self.tx != nil {
-        if self.verbose { log.Debugln("doExec in Tx: ", query, args) }
+        if self.verbose {
+            //log.Debugln("doExec in Tx: ", query, args)
+        }
         return self.tx.Exec(query, args...)
-    }else{
-        if self.verbose { log.Debugln("doExec in Database: ", query, args) }
+    } else {
+        if self.verbose {
+            //log.Debugln("doExec in DB: ", query, args)
+        }
         return self.db.Exec(query, args...)
     }
     return nil, nil
@@ -123,10 +142,14 @@ func (self *Session) doExec(query string, args ...interface{}) (sql.Result, erro
 
 func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, error) {
     if self.tx != nil {
-        if self.verbose { log.Debugln("doQuery in Tx: ", query, args) }
+        if self.verbose {
+            //log.Debugln("doQuery in Tx: ", query, args)
+        }
         return self.tx.Query(query, args...)
-    }else{
-        if self.verbose { log.Debugln("doQuery in Database: ", query, args) }
+    } else {
+        if self.verbose {
+            //log.Debugln("doQuery in DB: ", query, args)
+        }
         return self.db.Query(query, args...)
     }
     return nil, nil
@@ -134,10 +157,14 @@ func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, erro
 
 func (self *Session) doQueryRow(query string, args ...interface{}) *sql.Row {
     if self.tx != nil {
-        if self.verbose { log.Debugln("doQueryRow in Tx: ", query, args) }
+        if self.verbose {
+            //log.Debugln("doQueryRow in Tx: ", query, args)
+        }
         return self.tx.QueryRow(query, args...)
-    }else{
-        if self.verbose { log.Debugln("doQueryRow in Db: ", query, args) }
+    } else {
+        if self.verbose {
+            //log.Debugln("doQueryRow in Db: ", query, args)
+        }
         return self.db.QueryRow(query, args...)
     }
     return nil

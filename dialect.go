@@ -6,12 +6,12 @@ import (
 
 type IDialect interface {
     Create(*Table, ...interface{}) (string, []interface{}, error)
+    Drop(*Table, bool) (string, []interface{}, error)
     Select(*Table, []QueryColumn, []QueryFilter, []QueryOrder, int64, int64) (string, []interface{}, error)
     Insert(*Table, interface{}, ...string) (string, []interface{}, error)
     Update(*Table, []QueryFilter, ...UpdateColumn) (string, []interface{}, error)
     Delete(*Table, []QueryFilter) (string, []interface{}, error)
 }
-
 
 var _builtin_dialects map[string]IDialect
 
@@ -24,7 +24,7 @@ func RegisterDialect(name string, d IDialect) {
 }
 
 type Engine struct {
-    db *sql.DB
+    db         *sql.DB
     driverName string
 }
 
@@ -33,12 +33,12 @@ func CreateEngine(name string, dataSource string) (*Engine, error) {
     if nil != err {
         return nil, err
     }
-    return &Engine{db:db, driverName:name}, nil
+    return &Engine{db: db, driverName: name}, nil
 }
 
 func (engine *Engine) MakeSession() *Session {
     return &Session{
-        db: engine.db,
+        db:         engine.db,
         driverName: engine.driverName,
     }
 }

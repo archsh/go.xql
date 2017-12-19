@@ -13,7 +13,6 @@ type IntegerArray []int
 type SmallIntegerArray []int16
 type BoolArray []bool
 
-
 // PARSING ARRAYS
 // SEE http://www.postgresql.org/docs/9.1/static/arrays.html#ARRAYS-IO
 // Arrays are output within {} and a delimiter, which is a comma for most
@@ -32,12 +31,12 @@ type BoolArray []bool
 var (
     // unquoted array values must not contain: (" , \ { } whitespace NULL)
     // and must be at least one char
-    unquotedChar = `[^",\\{}\s(NULL)]`
+    unquotedChar  = `[^",\\{}\s(NULL)]`
     unquotedValue = fmt.Sprintf("(%s)+", unquotedChar)
 
     // quoted array values are surrounded by double quotes, can be any
     // character except " or \, which must be backslash escaped:
-    quotedChar = `[^"\\]|\\"|\\\\`
+    quotedChar  = `[^"\\]|\\"|\\\\`
     quotedValue = fmt.Sprintf("\"(%s)*\"", quotedChar)
 
     // an array value may be either quoted or unquoted:
@@ -89,8 +88,7 @@ func (p *StringArray) Scan(src interface{}) error {
 func (p StringArray) Value() (driver.Value, error) {
     var ss []string
     for _, s := range p {
-        ss = append(ss, fmt.Sprintf(`"%s"`,s))
+        ss = append(ss, fmt.Sprintf(`"%s"`, s))
     }
-    return strings.Join([]string{"{",strings.Join(ss, ","),"}"},""), nil
+    return strings.Join([]string{"{", strings.Join(ss, ","), "}"}, ""), nil
 }
-
