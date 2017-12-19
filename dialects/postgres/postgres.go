@@ -279,51 +279,27 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
     s += t.TableName()
     var cols []string
     var vals []string
-    //i := 0
     r := reflect.ValueOf(obj)
-    if len(col) > 0 {
-        for i, n := range col {
-            column, ok := t.GetColumn(n)
-            if ! ok {
-                continue
-            }
-            //fmt.Println("POSTGRES Insert>1>>>",n,column.Auto,column.PrimaryKey,column)
-            //i += 1
-            fv := reflect.Indirect(r).FieldByName(column.ElemName).Interface()
-            fmt.Println(" col>", column)
-            fmt.Println(" fv>", fv)
-            fmt.Println(" Default>", column.Default)
-            if nil == fv {
-                //fv = column.Default
-                fmt.Println("  Default>", column.Default)
-                continue
-            }
-            cols = append(cols, n)
-            vals = append(vals, fmt.Sprintf("$%d", i+1))
-            args = append(args, fv)
-        }
-    } else {
-        for i, column := range t.GetColumns() {
-            //fmt.Println("POSTGRES Insert>2>>>",k,v.Auto,v.PrimaryKey,v)
-            //i += 1
-
-            fv := reflect.Indirect(r).FieldByName(column.ElemName).Interface()
-            fmt.Println(" col>", column)
-            fmt.Println(" fv>", fv)
-            fmt.Println(" Default>", column.Default)
-            if nil == fv {
-                fmt.Println("  Default>", column.Default)
-                continue
-                //fv = column.Default
-            }
-            cols = append(cols, fmt.Sprintf(`"%s"`, column.FieldName))
-            vals = append(vals, fmt.Sprintf("$%d", i+1))
-            args = append(args, fv)
+    if len(col) < 1 {
+        for _, x := range t.GetColumns() {
+            col = append(col, x.FieldName)
         }
     }
+    for i, n := range col {
+        column, ok := t.GetColumn(n)
+        if ! ok {
+            continue
+        }
+        if fv := reflect.Indirect(r).FieldByName(column.ElemName); ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()) == fv {
+            args = append(args, column.Default)
+        }else{
+            args = append(args, fv.Interface())
+        }
+        cols = append(cols, fmt.Sprintf(`"%s"`, column.FieldName))
+        vals = append(vals, fmt.Sprintf("$%d", i+1))
 
+    }
     s = fmt.Sprintf("%s (%s) VALUES(%s)", s, strings.Join(cols, ","), strings.Join(vals, ","))
-    //fmt.Println("Insert SQL:>", s)
     return
 }
 
