@@ -87,6 +87,18 @@ func (t *Table) GetIndexes() []*Index {
     return t.indexes
 }
 
+func (t *Table) GetPrimaryKeys() []*Column {
+    return t.primary_keys
+}
+
+func (t *Table) SetSchema(s string) {
+    t.schema = s
+}
+
+func (t *Table) Schema() string {
+    return t.schema
+}
+
 func (t *Table) GetColumn(name string) (*Column, bool) {
     if c, ok := t.m_columns[name]; ok {
         return c, true
