@@ -48,7 +48,8 @@ func (self *XRow) Scan(dest ...interface{}) error {
             var outputs []interface{}
             r := reflect.ValueOf(d)
             for _, qc := range self.qs.queries {
-                c, _ := self.qs.table.m_columns[qc.FieldName]
+                c, _ := self.qs.table.GetColumn(qc.FieldName)
+                //fmt.Printf("> Scan to field '%s' to '%s' .\n", qc.FieldName, c.ElemName)
                 vp := r.Elem().FieldByName(c.ElemName).Addr().Interface()
                 outputs = append(outputs, vp)
             }
@@ -76,7 +77,7 @@ func (self *XRows) Scan(dest ...interface{}) error {
             var outputs []interface{}
             r := reflect.ValueOf(d)
             for _, qc := range self.qs.queries {
-                c, _ := self.qs.table.m_columns[qc.FieldName]
+                c, _ := self.qs.table.GetColumn(qc.FieldName)
                 vp := r.Elem().FieldByName(c.ElemName).Addr().Interface()
                 outputs = append(outputs, vp)
             }
