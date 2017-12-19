@@ -5,13 +5,10 @@ import (
     "fmt"
     "reflect"
     "strings"
+    "errors"
 )
 
 type PostgresDialect struct {
-}
-
-func (pb PostgresDialect) Drop(t *xql.Table) error {
-    return nil
 }
 
 /*
@@ -147,7 +144,7 @@ CREATE INDEX ix_public_metas_vod_albums_idx
  }
 
  func makeIndexes(t *xql.Table, idx int, i... *xql.Index) (ret []string) {
-     for j, ii := range i {
+     for _, ii := range i {
          fs := []string{}
          for _, c := range ii.Columns {
              fs = append(fs, c.FieldName)
@@ -168,13 +165,40 @@ CREATE INDEX ix_public_metas_vod_albums_idx
              tp = "USING gin"
          }
          // CREATE INDEX test2_mm_idx ON test2 (major, minor);
-         s := fmt.Sprintf("CREATE INDEX %s_%d_idx ON %s %s (%s);",
-             t.BaseTableName(), idx+j, t.BaseTableName(), tp, strings.Join(fs, ","))
+         s := fmt.Sprintf("CREATE INDEX %s ON %s %s (%s);",ii.Name , t.BaseTableName(), tp, strings.Join(fs, ","))
          ret = append(ret, s)
      }
      return
  }
 
+ // Drop
+ // Implement the IDialect interface for generate DROP statement
+func (pb PostgresDialect) Drop(t *xql.Table, force bool) (stm string, args []interface{}, err error) {
+    if nil == t {
+        err = errors.New("Table can not be nil !")
+        return
+    }
+    statements := []string{}
+    indexes := []*xql.Index{}
+    schema := ""
+    forced := ""
+    if force {
+        forced = " IF EXISTS "
+    }
+    for _, col := range t.GetColumns() {
+        indexes = append(indexes, col.Indexes...)
+    }
+    indexes = append(indexes, t.GetIndexes()...)
+    for _, idx := range indexes {
+        statements = append(statements, fmt.Sprintf("DROP INDEX %s%s%s;", forced, schema, idx.Name))
+    }
+    statements = append(statements, fmt.Sprintf("DROP TABLE %s%s;", forced, t.TableName()))
+    stm = strings.Join(statements, "\n")
+    return
+}
+
+// Create
+// Implement the IDialect interface for creating table.
 func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
     var createSQL string
     var table_name string = t.TableName()
@@ -182,13 +206,7 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
     var indexes []*xql.Index
     var cols []string
     for _, c := range t.GetColumns() {
-        //if c.Type == "" {
-        //    return "", args, errors.New("Unknow Column Type!!!")
-        //}
         col_str := fmt.Sprintf(`"%s" %s`, c.FieldName, c.TypeDefine)
-        //if ! c.Nullable {
-        //    col_str = fmt.Sprintf(`%s NOT NULL`, col_str)
-        //}
         if c.Default != nil {
             col_str = fmt.Sprintf(`%s DEFAULT %s`, col_str, c.Default)
         }
@@ -197,11 +215,6 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
         }
         cols = append(cols, col_str)
         indexes = append(indexes, c.Indexes...)
-        //if c.Indexed {
-        //    idxs := fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_%s_%s ON %s USING btree (%s);",
-        //        t.TableName(), c.FieldName, table_name, c.FieldName)
-        //    indexes = append(indexes, idxs)
-        //}
     }
     cols = append(cols, makeConstraints(t, 0, t.GetConstraints()...)...)
     createSQL = createSQL + strings.Join(cols, ", ") + " );"
@@ -211,6 +224,8 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
     return s, args, err
 }
 
+// Select
+// Implement the IDialect interface for select values.
 func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, offset int64, limit int64) (s string, args []interface{}, err error) {
     var colnames []string
     for _, x := range cols {
@@ -274,6 +289,8 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
     return
 }
 
+// Insert
+// Implement the IDialect interface to generate insert statement
 func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (s string, args []interface{}, err error) {
     s = "INSERT INTO "
     s += t.TableName()
@@ -303,6 +320,8 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
     return
 }
 
+// Update
+// Implement the IDialect interface to generate UPDATE statement
 func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
     s = "UPDATE "
     s += t.TableName()
@@ -348,6 +367,8 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
     return
 }
 
+// Delete
+// Implement the IDialect interface to generate DELETE statement
 func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s string, args []interface{}, err error) {
     s = "DELETE FROM "
     s += t.TableName()
@@ -378,6 +399,7 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
     return
 }
 
+// Register the dialect.
 func init() {
     xql.RegisterDialect("postgres", &PostgresDialect{})
 }

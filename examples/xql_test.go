@@ -63,6 +63,16 @@ func TestQuerySet_Insert(t *testing.T) {
     }
     t.Log("MovieCrew:> ", MovieCrew)
     sess := engine.MakeSession()
+    e = sess.Drop(MovieCrew, true)
+    if nil != e {
+        t.Fatal("Failed to drop table:>", e)
+        return
+    }
+    e = sess.Drop(MovieCategory, true)
+    if nil != e {
+        t.Fatal("Failed to drop table:>", e)
+        return
+    }
     e = sess.Create(MovieCategory)
     if nil != e {
         t.Fatal("Failed to create table:>", e)

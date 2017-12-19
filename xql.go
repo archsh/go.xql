@@ -21,8 +21,8 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
     }
     t := &Table{
         entity:  entity,
-        columns: makeColumns(entity, false, skips...),
     }
+    t.columns = makeColumns(t, entity, false, skips...)
     if len(schema) > 0 {
         t.schema = schema[0]
     }

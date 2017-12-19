@@ -95,13 +95,13 @@ func DefaultDeclare(f reflect.StructField, props PropertySet) (string, error) {
 
 // makeColumn
 // Make a &Column{} object according to given field.
-func makeColumn(f reflect.StructField, v reflect.Value) *Column {
+func makeColumn(t *Table, f reflect.StructField, v reflect.Value) *Column {
     props, e := ParseProperties(f.Tag.Get("xql"))
     if nil != e {
         panic(e)
     }
     field := &Column{
-        FieldName:Camel2Underscore(f.Name),
+        FieldName: Camel2Underscore(f.Name),
         ElemName:f.Name,
         Type: f.Type,
         PropertySet: props,
@@ -112,9 +112,13 @@ func makeColumn(f reflect.StructField, v reflect.Value) *Column {
     }else{
         field.Jtag = f.Name
     }
+    if fn, ok := props.PopString("name"); ok {
+        field.FieldName = fn
+    }
     field.Indexed, _ = props.PopBool("index", false)
     if field.Indexed {
-        field.Indexes = append(field.Indexes, makeIndexes(INDEX_B_TREE, field)...)
+        field.Indexes = append(field.Indexes,
+            makeIndexes(INDEX_B_TREE, t.BaseTableName()+"_"+field.FieldName, field)...)
     }
     field.Nullable, _ = props.PopBool("nullable", false)
     if field.Nullable == false {
@@ -149,9 +153,6 @@ func makeColumn(f reflect.StructField, v reflect.Value) *Column {
         field.Constraints = append(field.Constraints,
             makeConstraints(CONSTRAINT_EXCLUDE, field)...)
     }
-    if fn, ok := props.PopString("name"); ok {
-        field.FieldName = fn
-    }
     if df, ok := props.PopString("default"); ok {
         field.Default = df
     }
@@ -170,11 +171,10 @@ func makeColumn(f reflect.StructField, v reflect.Value) *Column {
 
 // makeColumns
 // Make a list of &Column{} objects according to a given struct pointer.
-func makeColumns(p interface{}, recursive bool, skips ...string) []*Column {
+func makeColumns(t *Table, p interface{}, recursive bool, skips ...string) []*Column {
     if nil == p {
         panic("Can not use nil pointer ")
     }
-
     et := reflect.TypeOf(p)
     ev := reflect.ValueOf(p)
     fields := []*Column{}
@@ -188,7 +188,7 @@ func makeColumns(p interface{}, recursive bool, skips ...string) []*Column {
         if f.Anonymous && !recursive {
             if x_tags[0] != "-" {
                 sks := getSkips(x_tags)
-                for _, c := range makeColumns(ev.Elem().Field(i).Addr().Interface(), true, sks...) {
+                for _, c := range makeColumns(t, ev.Elem().Field(i).Addr().Interface(), true, sks...) {
                     fields = append(fields, c)
                 }
             } else {
@@ -196,7 +196,7 @@ func makeColumns(p interface{}, recursive bool, skips ...string) []*Column {
             }
             continue
         }
-        field := makeColumn(f, v)
+        field := makeColumn(t, f, v)
         fields = append(fields, field)
     }
     return fields

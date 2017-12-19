@@ -8,13 +8,18 @@ import (
 
 type Session struct {
     driverName string
+    dialect    IDialect
     db         *sql.DB
     tx         *sql.Tx
     verbose    bool
 }
 
 func (self *Session) getDialect() IDialect {
+    if nil != self.dialect {
+        return self.dialect
+    }
     if s, ok := _builtin_dialects[self.driverName]; ok {
+        self.dialect = s
         return s
     } else {
         panic(fmt.Sprintf("Dialect '%s' not registered! ", self.driverName))
@@ -22,9 +27,20 @@ func (self *Session) getDialect() IDialect {
     return nil
 }
 
+func (self *Session) Drop(table *Table, force bool) error {
+    s, args, e := self.getDialect().Drop(table, force)
+    if nil != e {
+        return e
+    }
+    if _, e := self.db.Exec(s, args...); nil != e {
+        return errors.New(e.Error()+":>"+s)
+    } else {
+        return nil
+    }
+}
+
 func (self *Session) Create(table *Table) error {
-    dialect := self.getDialect()
-    s, args, e := dialect.Create(table)
+    s, args, e := self.getDialect().Create(table)
     if nil != e {
         return e
     }
