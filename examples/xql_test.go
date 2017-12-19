@@ -10,8 +10,8 @@ import (
 )
 
 type Category struct {
-    Id          string     `json:"id" xql:"type=uuid,pk=true,default=uuid_generate_v4()"`
-    Name        string     `json:"name" xql:"size=24,unique=true,nullable=false,index=true"`
+    Id          string     `json:"id" xql:"type=uuid,pk,default=uuid_generate_v4()"`
+    Name        string     `json:"name" xql:"size=24,unique,index"`
     Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
 }
 
@@ -20,17 +20,17 @@ func (c Category) TableName() string {
 }
 
 type Crew struct {
-    Id          string     `json:"id" xql:"type=uuid,primarykey=true,default=uuid_generate_v4()"`
-    FullName    string     `json:"fullName" xql:"size=80,unique=true,nullable=false,index=true"`
-    FirstName   string     `json:"firstName" xql:"size=24,nullable=false"`
-    MiddleName  string     `json:"middleName" xql:"size=24,nullable=false"`
-    LastName    string     `json:"lastName" xql:"size=24,nullable=false"`
+    Id          string     `json:"id" xql:"type=uuid,primarykey,default=uuid_generate_v4()"`
+    FullName    string     `json:"fullName" xql:"size=80,unique=true,index=true"`
+    FirstName   string     `json:"firstName" xql:"size=24"`
+    MiddleName  string     `json:"middleName" xql:"size=24"`
+    LastName    string     `json:"lastName" xql:"size=24"`
     Region      string     `json:"region"  xql:"size=24,nullable=true"`
     Age         int         `json:"age" xql:"check=(age>18)"`
-    CategoryId  string     `json:"categoryId"  xql:"type=uuid,fk=categories.id,ondelete=CASCADE,nullable=false"`
-    Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
-    Created     *time.Time `json:"created"  xql:"type=timestamp,nullable=true,default=Now()"`
-    Updated     *time.Time `json:"Updated"  xql:"type=timestamp,nullable=true,default=Now()"`
+    CategoryId  string     `json:"categoryId"  xql:"type=uuid,fk=categories.id,ondelete=CASCADE"`
+    Description string     `json:"description"  xql:"name=desc,type=text,size=24"`
+    Created     *time.Time `json:"created"  xql:"type=timestamp,default=Now()"`
+    Updated     *time.Time `json:"Updated"  xql:"type=timestamp,default=Now()"`
 }
 
 func (c Crew) TableName() string {

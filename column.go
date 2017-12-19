@@ -112,9 +112,6 @@ func makeColumn(f reflect.StructField, v reflect.Value) *Column {
     }else{
         field.Jtag = f.Name
     }
-    if dflt, ok := props.GetString("default"); ok {
-        field.Default = dflt
-    }
     field.Indexed, _ = props.PopBool("index", false)
     if field.Indexed {
         field.Indexes = append(field.Indexes, makeIndexes(INDEX_B_TREE, field)...)
@@ -158,7 +155,7 @@ func makeColumn(f reflect.StructField, v reflect.Value) *Column {
     if df, ok := props.PopString("default"); ok {
         field.Default = df
     }
-    field.PropertySet = props
+    //field.PropertySet = props
     if p, ok := v.Interface().(Declarable); ok {
         field.TypeDefine = p.Declare(props)
     }else{
