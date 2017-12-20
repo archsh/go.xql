@@ -28,14 +28,16 @@ type TableIgnored interface {
 
 // TableConstrainted
 // Which allow struct to define a method Constraints() to cunstomize table constraints
+// type, fields, statement
 type TableConstrainted interface {
-    Constraints() []*Constraint
+    Constraints() [][3]string
 }
 
 // TableIndexed
 // Which allow struct to define a method Indexes() to define table indexes
+// type, fields, statement
 type TableIndexed interface {
-    Indexes() []*Index
+    Indexes() [][2]string
 }
 
 // TablePreInsert

@@ -35,10 +35,10 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
     //t.constraints = makeConstraints(t.columns...)
     //t.indexes = makeIndexes(t.columns...)
     if tt, ok := entity.(TableConstrainted); ok {
-        t.constraints = append(t.constraints, tt.Constraints()...)
+        t.constraints = append(t.constraints, buildConstraints(t, tt.Constraints()...)...)
     }
     if tt, ok := entity.(TableIndexed); ok {
-        t.indexes = append(t.indexes, tt.Indexes()...)
+        t.indexes = append(t.indexes, buildIndexes(t, tt.Indexes()...)...)
     }
 
     t.x_columns = make(map[string]*Column)
