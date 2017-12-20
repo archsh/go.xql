@@ -4,7 +4,6 @@ import (
     "testing"
     "time"
     _ "github.com/lib/pq"
-    "github.com/archsh/go.uuid"
     "github.com/archsh/go.xql"
     "github.com/archsh/go.xql/dialects/postgres"
     "os"
@@ -12,15 +11,15 @@ import (
     "database/sql/driver"
 )
 
-type Category struct {
-    Id          string     `json:"id" xql:"type=uuid,pk,default=uuid_generate_v4()"`
+type School struct {
+    Id          int        `json:"id" xql:"type=serial,pk"`
     Name        string     `json:"name" xql:"size=24,unique,index"`
     Tags        postgres.StringArray `json:"tags" xql:"size=32,nullable"`
     Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
 }
 
-func (c Category) TableName() string {
-    return "categories"
+func (c School) TableName() string {
+    return "schools"
 }
 
 type Character struct {
@@ -42,29 +41,44 @@ func (j Character) Value() (driver.Value, error) {
     return postgres.JSONB_Value(j)
 }
 
-type Crew struct {
-    Id          string     `json:"id" xql:"type=uuid,primarykey,default=uuid_generate_v4()"`
+type People struct {
+    Id          int        `json:"id" xql:"type=serial,pk"`
     FullName    string     `json:"fullName" xql:"size=80,unique=true,index=true"`
     FirstName   string     `json:"firstName" xql:"size=24"`
     MiddleName  string     `json:"middleName" xql:"size=24"`
     LastName    string     `json:"lastName" xql:"size=24"`
     Region      string     `json:"region"  xql:"size=24,nullable=true"`
-    Age         int         `json:"age" xql:"check=(age>18)"`
-    Attributes  postgres.HSTORE `json:"attributes" xql:"nullable"`
+    Age         int        `json:"age" xql:"check=(age>18)"`
+    SchoolId    int        `json:"schoolId"  xql:"type=integer,fk=schools.id,ondelete=CASCADE"`
+    Description string             `json:"description"  xql:"name=desc,type=text,size=24"`
+    Created     *time.Time         `json:"created"  xql:"type=timestamp,default=Now()"`
+    Updated     *time.Time         `json:"Updated"  xql:"type=timestamp,default=Now()"`
+}
+
+type Teacher struct {
+    People
+    Degree      string  `json:"degree" xql:"size=64"`
+}
+
+func (t Teacher) TableName() string {
+    return "teachers"
+}
+
+type Student struct {
+    People
+    Grade       string             `json:"grade" xql:"size=32"`
+    Attributes  postgres.HSTORE    `json:"attributes" xql:"nullable"`
     Scores      postgres.RealArray `json:"scores" xql:"nullable"`
-    Character   Character  `json:"character" xql:"nullable"`
-    CategoryId  string     `json:"categoryId"  xql:"type=uuid,fk=categories.id,ondelete=CASCADE"`
-    Description string     `json:"description"  xql:"name=desc,type=text,size=24"`
-    Created     *time.Time `json:"created"  xql:"type=timestamp,default=Now()"`
-    Updated     *time.Time `json:"Updated"  xql:"type=timestamp,default=Now()"`
+    Character   Character          `json:"character" xql:"nullable"`
 }
 
-func (c Crew) TableName() string {
-    return "crews"
+func (c Student) TableName() string {
+    return "students"
 }
 
-var MovieCrew = xql.DeclareTable(&Crew{}, )
-var MovieCategory = xql.DeclareTable(&Category{})
+var StudentTable = xql.DeclareTable(&Student{})
+var TeacherTable = xql.DeclareTable(&Teacher{})
+var SchoolTable = xql.DeclareTable(&School{})
 var session *xql.Session
 
 func TestMain(m *testing.M) {
@@ -75,12 +89,12 @@ func TestMain(m *testing.M) {
         fmt.Println("> Prepare failed:>", e)
         os.Exit(-1)
     }
-    e = destroy_tables(session, MovieCrew, MovieCategory)
+    e = destroy_tables(session, StudentTable, TeacherTable, SchoolTable)
     if nil != e {
         fmt.Println("> Destroy Tables failed:>", e)
         os.Exit(-1)
     }
-    e = create_tables(session, MovieCategory, MovieCrew)
+    e = create_tables(session, SchoolTable, TeacherTable, StudentTable)
     if nil != e {
         fmt.Println("> Create Tables failed:>", e)
         os.Exit(-1)
@@ -127,9 +141,9 @@ func destroy_tables(s *xql.Session, tables... *xql.Table) error {
 
 func TestQuerySet_Insert(t *testing.T) {
     t1 := time.Now()
-    c := Category{Id:uuid.NewV4().String(), Name:"Test"}
-    c.Tags = []string{"Star", "Actor"}
-    c1 := Crew{Id: uuid.NewV4().String(), FullName: "Tom Cruse", Region: "US", Age: 19, CategoryId:c.Id}
+    c := School{Name:"Xinxiu Primary School"}
+    c.Tags = []string{"Primary", "Luohu", "Shenzhen", "Public"}
+    c1 := Student{People:People{FullName: "Tom Cruse", Region: "US", Age: 19, SchoolId: c.Id}}
     c1.Attributes = make(map[string]interface{})
     c1.Attributes["skill"] = "Good"
     c1.Attributes["score"] = "99.5"
@@ -137,7 +151,7 @@ func TestQuerySet_Insert(t *testing.T) {
     c1.Character.Attitude = "OK"
     c1.Character.Height = 172
     c1.Character.Weight = 68
-    c2 := Crew{Id: uuid.NewV4().String(), FullName: "Hue Jackman", Region: "US", Age:21, CategoryId:c.Id}
+    c2 := Student{People:People{FullName: "Hue Jackman", Region: "US", Age:21, SchoolId:c.Id}}
     c2.Attributes = make(map[string]interface{})
     c2.Attributes["skill"] = "Normal"
     c2.Attributes["score"] = "79.5"
@@ -145,23 +159,23 @@ func TestQuerySet_Insert(t *testing.T) {
     c2.Character.Attitude = "Good"
     c2.Character.Height = 192
     c2.Character.Weight = 88
-    if n, e := session.Query(MovieCategory).Insert(&c); nil != e {
+    if n, e := session.Query(SchoolTable).Insert(&c); nil != e {
         t.Fatal("Insert failed:> ", e)
     }else{
-        t.Log("Inserted Category: ", n, c)
+        t.Log("Inserted School: ", n, c)
     }
-    if n, e := session.Query(MovieCrew).Insert(&c1, &c2); nil != e {
+    if n, e := session.Query(StudentTable).Insert(&c1, &c2); nil != e {
         t.Fatal("Insert failed:> ", e)
     }else{
-        t.Log("Inserted Crew: ", n, c1,c2)
+        t.Log("Inserted Student: ", n, c1,c2)
     }
     t.Log("Time spent:> ", time.Now().Sub(t1))
 }
 
 func TestQuerySet_One(t *testing.T) {
     t1 := time.Now()
-    crew := Crew{}
-    if e := session.Query(MovieCrew).One().Scan(&crew); nil != e {
+    crew := Student{}
+    if e := session.Query(StudentTable).One().Scan(&crew); nil != e {
         t.Fatal("Qery One failed:>", e)
     }else{
         t.Log("Queried One:>", crew)
@@ -171,16 +185,16 @@ func TestQuerySet_One(t *testing.T) {
 
 func TestQuerySet_Scan(t *testing.T) {
     t1 := time.Now()
-    if r, e :=session.Query(MovieCrew).Filter(map[string]interface{}{"region":"US"}).All(); nil != e {
+    if r, e :=session.Query(StudentTable).Filter(map[string]interface{}{"region":"US"}).All(); nil != e {
         t.Fatal("Query all failed:>", e)
     }else{
         defer r.Close()
         for r.Next() {
-            crew := Crew{}
+            crew := Student{}
             if e = r.Scan(&crew); nil != e {
                 t.Fatal("Scan failed:>", e)
             }else{
-                t.Log("Scanned Crew:>", crew)
+                t.Log("Scanned Student:>", crew)
             }
         }
     }
@@ -189,7 +203,7 @@ func TestQuerySet_Scan(t *testing.T) {
 
 func TestQuerySet_Update(t *testing.T) {
     t1 := time.Now()
-    if n, e := session.Query(MovieCrew).Update(map[string]interface{}{"age": 30}); nil != e {
+    if n, e := session.Query(StudentTable).Update(map[string]interface{}{"age": 30}); nil != e {
         t.Fatal("Update failed:>", e)
     }else{
         t.Log("Updated rows:>", n)
@@ -199,7 +213,7 @@ func TestQuerySet_Update(t *testing.T) {
 
 func TestQuerySet_Delete(t *testing.T) {
     t1 := time.Now()
-    if n, e := session.Query(MovieCrew).Filter(map[string]interface{}{"full_name":"Tom Cruse"}).Delete(); nil != e {
+    if n, e := session.Query(StudentTable).Filter(map[string]interface{}{"full_name":"Tom Cruse"}).Delete(); nil != e {
         t.Fatal("Delete failed:>", e)
     }else{
         t.Log("Deleted rows:>", n)
