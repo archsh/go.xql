@@ -9,6 +9,7 @@ import (
     "github.com/archsh/go.xql/dialects/postgres"
     "os"
     "fmt"
+    "database/sql/driver"
 )
 
 type Category struct {
@@ -22,6 +23,25 @@ func (c Category) TableName() string {
     return "categories"
 }
 
+type Character struct {
+    postgres.JSON
+    Attitude  string
+    Height    int
+    Weight    int
+}
+
+//func (j Character) Declare(props xql.PropertySet) string {
+//    return "JSONB"
+//}
+
+func (j *Character) Scan(value interface{}) error {
+    return postgres.JSONB_Scan(j, value)
+}
+
+func (j Character) Value() (driver.Value, error) {
+    return postgres.JSONB_Value(j)
+}
+
 type Crew struct {
     Id          string     `json:"id" xql:"type=uuid,primarykey,default=uuid_generate_v4()"`
     FullName    string     `json:"fullName" xql:"size=80,unique=true,index=true"`
@@ -32,6 +52,7 @@ type Crew struct {
     Age         int         `json:"age" xql:"check=(age>18)"`
     Attributes  postgres.HSTORE `json:"attributes" xql:"nullable"`
     Scores      postgres.RealArray `json:"scores" xql:"nullable"`
+    Character   Character  `json:"character" xql:"nullable"`
     CategoryId  string     `json:"categoryId"  xql:"type=uuid,fk=categories.id,ondelete=CASCADE"`
     Description string     `json:"description"  xql:"name=desc,type=text,size=24"`
     Created     *time.Time `json:"created"  xql:"type=timestamp,default=Now()"`
@@ -113,11 +134,17 @@ func TestQuerySet_Insert(t *testing.T) {
     c1.Attributes["skill"] = "Good"
     c1.Attributes["score"] = "99.5"
     c1.Scores = []float32{99,96,93}
+    c1.Character.Attitude = "OK"
+    c1.Character.Height = 172
+    c1.Character.Weight = 68
     c2 := Crew{Id: uuid.NewV4().String(), FullName: "Hue Jackman", Region: "US", Age:21, CategoryId:c.Id}
     c2.Attributes = make(map[string]interface{})
     c2.Attributes["skill"] = "Normal"
     c2.Attributes["score"] = "79.5"
     c2.Scores = []float32{89,76,83}
+    c2.Character.Attitude = "Good"
+    c2.Character.Height = 192
+    c2.Character.Weight = 88
     if n, e := session.Query(MovieCategory).Insert(&c); nil != e {
         t.Fatal("Insert failed:> ", e)
     }else{
