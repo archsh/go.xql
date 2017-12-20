@@ -6,6 +6,7 @@ import (
     "reflect"
     "strings"
     "errors"
+    "database/sql"
 )
 
 type PostgresDialect struct {
@@ -397,6 +398,14 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
         }
     }
     return
+}
+
+func Initialize_HSTORE(db *sql.DB, schema... string) error {
+    return nil
+}
+
+func Initialize_UUID(db *sql.DB, schema... string) error {
+    return nil
 }
 
 // Register the dialect.

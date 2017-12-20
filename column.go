@@ -64,6 +64,8 @@ func DefaultDeclare(f reflect.StructField, props PropertySet) (string, error) {
             return Decimal("").Declare(props), nil
         case "uuid":
             return UUID("").Declare(props), nil
+        default:
+            return t, nil
         }
     }
     switch f.Type.Kind() {

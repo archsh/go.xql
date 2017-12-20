@@ -6,7 +6,7 @@ import (
     _ "github.com/lib/pq"
     "github.com/archsh/go.uuid"
     "github.com/archsh/go.xql"
-    _ "github.com/archsh/go.xql/dialects/postgres"
+    "github.com/archsh/go.xql/dialects/postgres"
     "os"
     "fmt"
 )
@@ -14,6 +14,7 @@ import (
 type Category struct {
     Id          string     `json:"id" xql:"type=uuid,pk,default=uuid_generate_v4()"`
     Name        string     `json:"name" xql:"size=24,unique,index"`
+    Tags        postgres.StringArray `json:"tags" xql:"size=32,nullable"`
     Description string     `json:"description"  xql:"name=desc,type=text,size=24,nullable=false"`
 }
 
@@ -29,6 +30,8 @@ type Crew struct {
     LastName    string     `json:"lastName" xql:"size=24"`
     Region      string     `json:"region"  xql:"size=24,nullable=true"`
     Age         int         `json:"age" xql:"check=(age>18)"`
+    Attributes  postgres.HSTORE `json:"attributes" xql:"nullable"`
+    Scores      postgres.RealArray `json:"scores" xql:"nullable"`
     CategoryId  string     `json:"categoryId"  xql:"type=uuid,fk=categories.id,ondelete=CASCADE"`
     Description string     `json:"description"  xql:"name=desc,type=text,size=24"`
     Created     *time.Time `json:"created"  xql:"type=timestamp,default=Now()"`
@@ -104,8 +107,17 @@ func destroy_tables(s *xql.Session, tables... *xql.Table) error {
 func TestQuerySet_Insert(t *testing.T) {
     t1 := time.Now()
     c := Category{Id:uuid.NewV4().String(), Name:"Test"}
+    c.Tags = []string{"Star", "Actor"}
     c1 := Crew{Id: uuid.NewV4().String(), FullName: "Tom Cruse", Region: "US", Age: 19, CategoryId:c.Id}
+    c1.Attributes = make(map[string]interface{})
+    c1.Attributes["skill"] = "Good"
+    c1.Attributes["score"] = "99.5"
+    c1.Scores = []float32{99,96,93}
     c2 := Crew{Id: uuid.NewV4().String(), FullName: "Hue Jackman", Region: "US", Age:21, CategoryId:c.Id}
+    c2.Attributes = make(map[string]interface{})
+    c2.Attributes["skill"] = "Normal"
+    c2.Attributes["score"] = "79.5"
+    c2.Scores = []float32{89,76,83}
     if n, e := session.Query(MovieCategory).Insert(&c); nil != e {
         t.Fatal("Insert failed:> ", e)
     }else{
