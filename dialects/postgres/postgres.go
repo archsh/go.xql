@@ -401,10 +401,20 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
 }
 
 func Initialize_HSTORE(db *sql.DB, schema... string) error {
+    s := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS hstore SCHEMA %s",schema[0])
+    fmt.Println(">>>", s)
+    if _, e := db.Exec(s); nil != e {
+        return e
+    }
     return nil
 }
 
 func Initialize_UUID(db *sql.DB, schema... string) error {
+    s := fmt.Sprintf("CREATE EXTENSION  IF NOT EXISTS \"uuid-ossp\" SCHEMA %s",schema[0])
+    fmt.Println(">>>", s)
+    if _, e := db.Exec(s); nil != e {
+        return e
+    }
     return nil
 }
 
