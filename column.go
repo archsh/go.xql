@@ -187,6 +187,9 @@ func makeColumns(t *Table, p interface{}, recursive bool, skips ...string) []*Co
             continue
         }
         x_tags := strings.Split(f.Tag.Get("xql"), ",")
+        if x_tags[0] == "-" {
+            continue
+        }
         if f.Anonymous && !recursive {
             if x_tags[0] != "-" {
                 sks := getSkips(x_tags)

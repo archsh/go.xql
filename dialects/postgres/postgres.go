@@ -166,7 +166,7 @@ CREATE INDEX ix_public_metas_vod_albums_idx
              tp = "USING gin"
          }
          // CREATE INDEX test2_mm_idx ON test2 (major, minor);
-         s := fmt.Sprintf("CREATE INDEX %s ON %s %s (%s);",ii.Name , t.BaseTableName(), tp, strings.Join(fs, ","))
+         s := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s %s (%s);",ii.Name , t.BaseTableName(), tp, strings.Join(fs, ","))
          ret = append(ret, s)
      }
      return
