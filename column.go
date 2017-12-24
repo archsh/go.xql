@@ -190,7 +190,7 @@ func makeColumns(t *Table, p interface{}, recursive bool, skips ...string) []*Co
         if x_tags[0] == "-" {
             continue
         }
-        if f.Anonymous && !recursive {
+        if f.Anonymous {
             if x_tags[0] != "-" {
                 sks := getSkips(x_tags)
                 for _, c := range makeColumns(t, ev.Elem().Field(i).Addr().Interface(), true, sks...) {
