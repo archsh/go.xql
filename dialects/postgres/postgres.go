@@ -116,15 +116,16 @@ CREATE INDEX ix_public_metas_vod_albums_idx
              fields = append(fields, cc.FieldName)
          }
          field_str := strings.Join(fields, ",")
+         name_str := fmt.Sprintf("%s_%s", t.BaseTableName(), strings.Join(fields,"_"))
          switch x.Type {
          //case xql.CONSTRAINT_NOT_NULL:
          //    ret = append(ret, fmt.Sprintf("NOT NUL"))
          case xql.CONSTRAINT_UNIQUE:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT UNIQUE (%s)", field_str))
+             ret = append(ret, fmt.Sprintf("CONSTRAINT %s_unique UNIQUE (%s)", name_str, field_str))
          case xql.CONSTRAINT_CHECK:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT CHECK (%s)", x.Statement))
+             ret = append(ret, fmt.Sprintf("CONSTRAINT %s_check CHECK (%s)", name_str, x.Statement))
          case xql.CONSTRAINT_EXCLUDE:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT EXCLUDE USING %s", x.Statement))
+             ret = append(ret, fmt.Sprintf("CONSTRAINT %s_exclude EXCLUDE USING %s", name_str, x.Statement))
          case xql.CONSTRAINT_FOREIGNKEY:
              ondelete := ""
              onupdate := ""
@@ -135,10 +136,10 @@ CREATE INDEX ix_public_metas_vod_albums_idx
                  onupdate = "ON UPDATE "+x.OnUpdate
              }
              ret = append(ret,
-                 fmt.Sprintf("CONSTRAINT FOREIGN KEY (%s) REFERENCES %s %s %s",
-                     field_str, x.Statement, onupdate, ondelete))
+                 fmt.Sprintf("CONSTRAINT %s_fkey FOREIGN KEY (%s) REFERENCES %s %s %s",
+                     name_str, field_str, x.Statement, onupdate, ondelete))
          case xql.CONSTRAINT_PRIMARYKEY:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT PRIMARY KEY (%s)", field_str))
+             ret = append(ret, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", name_str, field_str))
          }
      }
      return
@@ -166,7 +167,7 @@ CREATE INDEX ix_public_metas_vod_albums_idx
              tp = "USING gin"
          }
          // CREATE INDEX test2_mm_idx ON test2 (major, minor);
-         s := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s %s (%s);",ii.Name , t.BaseTableName(), tp, strings.Join(fs, ","))
+         s := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s %s (\"%s\");",ii.Name , t.BaseTableName(), tp, strings.Join(fs, ","))
          ret = append(ret, s)
      }
      return

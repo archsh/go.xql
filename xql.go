@@ -40,12 +40,6 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
         fmt.Println(">>> Column:", c.FieldName, c.ElemName, c.TypeDefine)
     }
 
-    for _, c := range t.columns {
-        if c.PrimaryKey {
-            t.primary_keys = append(t.primary_keys, c)
-        }
-    }
-
     //t.constraints = makeConstraints(t.columns...)
     //t.indexes = makeIndexes(t.columns...)
     if tt, ok := entity.(TableConstrainted); ok {
@@ -55,6 +49,17 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
         t.indexes = append(t.indexes, buildIndexes(t, tt.Indexes()...)...)
     }
 
+    for _, c := range t.constraints {
+        if c.Type == CONSTRAINT_PRIMARYKEY {
+            t.primary_keys = append(t.primary_keys, c.Columns...)
+        }
+    }
+
+    for _, c := range t.columns {
+        if c.PrimaryKey {
+            t.primary_keys = append(t.primary_keys, c)
+        }
+    }
 
     return t
 }
