@@ -289,10 +289,10 @@ func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
         if nil != err {
             return 0, err
         }
-        fmt.Println("Insert SQL:>", s, args)
+        //fmt.Println("Insert SQL:>", s, args)
         _, err = self.session.doExec(s, args...)
         if nil != err {
-            fmt.Println(">>>Insert SQL:>", s, args, err)
+            //fmt.Println(">>>Insert SQL:>", s, args, err)
             return 0, err
         } else {
             if pobj, ok := obj.(TablePostInsert); ok {

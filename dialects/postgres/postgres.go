@@ -403,7 +403,7 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
 
 func CreateSchema(db *sql.DB, schema string) error {
     s := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s",schema)
-    fmt.Println(">>>", s)
+    //fmt.Println(">>>", s)
     if _, e := db.Exec(s); nil != e {
         return e
     }
@@ -412,7 +412,7 @@ func CreateSchema(db *sql.DB, schema string) error {
 
 func Initialize_HSTORE(db *sql.DB, schema... string) error {
     s := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS hstore SCHEMA %s",schema[0])
-    fmt.Println(">>>", s)
+    //fmt.Println(">>>", s)
     if _, e := db.Exec(s); nil != e {
         return e
     }
@@ -421,7 +421,7 @@ func Initialize_HSTORE(db *sql.DB, schema... string) error {
 
 func Initialize_UUID(db *sql.DB, schema... string) error {
     s := fmt.Sprintf("CREATE EXTENSION  IF NOT EXISTS \"uuid-ossp\" SCHEMA %s",schema[0])
-    fmt.Println(">>>", s)
+    //fmt.Println(">>>", s)
     if _, e := db.Exec(s); nil != e {
         return e
     }

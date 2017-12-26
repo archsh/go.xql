@@ -2,7 +2,7 @@ package xql
 
 import (
     "database/sql"
-    "fmt"
+    //"fmt"
 )
 
 func MakeSession(db *sql.DB, driverName string, verbose ...bool) *Session {
@@ -35,10 +35,10 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
     if len(schema) > 0 {
         t.schema = schema[0]
     }
-    fmt.Println(">>> Table:", t.TableName())
-    for _, c := range t.columns {
-        fmt.Println(">>> Column:", c.FieldName, c.ElemName, c.TypeDefine)
-    }
+    //fmt.Println(">>> Table:", t.TableName())
+    //for _, c := range t.columns {
+    //    fmt.Println(">>> Column:", c.FieldName, c.ElemName, c.TypeDefine)
+    //}
 
     //t.constraints = makeConstraints(t.columns...)
     //t.indexes = makeIndexes(t.columns...)
