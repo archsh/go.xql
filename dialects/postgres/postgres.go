@@ -401,6 +401,15 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
     return
 }
 
+func CreateSchema(db *sql.DB, schema string) error {
+    s := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s",schema)
+    fmt.Println(">>>", s)
+    if _, e := db.Exec(s); nil != e {
+        return e
+    }
+    return nil
+}
+
 func Initialize_HSTORE(db *sql.DB, schema... string) error {
     s := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS hstore SCHEMA %s",schema[0])
     fmt.Println(">>>", s)
