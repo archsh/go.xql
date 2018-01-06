@@ -221,6 +221,34 @@ func (self *QuerySet) One() *XRow {
     return xrow
 }
 
+func (self *QuerySet) Get(pks ...interface{}) *XRow {
+    if len(self.queries) < 1 {
+        for _, col := range self.table.m_columns {
+            self.queries = append(self.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
+        }
+    }
+    if len(pks) != len(self.table.primary_keys) {
+        panic("Primary Key number not match!")
+    }
+    self.filters = make([]QueryFilter,0,len(pks))
+    for i, pk := range pks {
+        filter := QueryFilter{
+            Field: self.table.primary_keys[i].FieldName,
+            Value: pk,
+            Operator: "=",
+        }
+        self.filters = append(self.filters, filter)
+    }
+    s, args, err := self.session.getDialect().Select(self.table, self.queries,
+        self.filters, self.orders, self.offset, 1)
+    if nil != err {
+        return nil
+    }
+    row := self.session.doQueryRow(s, args...)
+    xrow := &XRow{row: row, qs: self}
+    return xrow
+}
+
 func (self *QuerySet) Update(vals interface{}) (int64, error) {
     cols := []UpdateColumn{}
     if cm, ok := vals.(map[string]interface{}); ok {
