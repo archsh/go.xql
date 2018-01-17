@@ -69,112 +69,112 @@ CREATE INDEX ix_public_metas_vod_albums_idx
   (idx);
  */
 
- func makeInlineConstraint(c... *xql.Constraint) string {
-     constraints := []string{}
-     for _, x := range c {
-         switch x.Type {
-         case xql.CONSTRAINT_NOT_NULL:
-             constraints = append(constraints, "NOT NULL")
-         case xql.CONSTRAINT_UNIQUE:
-             constraints = append(constraints, "UNIQUE")
-         case xql.CONSTRAINT_CHECK:
-             constraints = append(constraints, fmt.Sprintf("CHECK (%s)", x.Statement))
-         //case xql.CONSTRAINT_EXCLUDE:
-             //constraints = append(constraints, "NOT NUL")
-         case xql.CONSTRAINT_FOREIGNKEY:
-             ondelete := ""
-             onupdate := ""
-             if x.OnDelete != "" {
-                 ondelete = "ON DELETE "+x.OnDelete
-             }
-             if x.OnUpdate != "" {
-                 onupdate = "ON UPDATE "+x.OnUpdate
-             }
-             xs := strings.Split(x.Statement, ".")
-             if len(xs) > 1 {
-                 tt := strings.Join(xs[:len(xs)-1],".")
-                 tc := xs[len(xs)-1]
-                 constraints = append(constraints, fmt.Sprintf("REFERENCES %s (%s) %s %s",tt, tc, onupdate, ondelete))
-             }else{
-                 constraints = append(constraints, fmt.Sprintf("REFERENCES %s %s %s",xs[0], onupdate, ondelete))
-             }
+func makeInlineConstraint(c ... *xql.Constraint) string {
+    constraints := []string{}
+    for _, x := range c {
+        switch x.Type {
+        case xql.CONSTRAINT_NOT_NULL:
+            constraints = append(constraints, "NOT NULL")
+        case xql.CONSTRAINT_UNIQUE:
+            constraints = append(constraints, "UNIQUE")
+        case xql.CONSTRAINT_CHECK:
+            constraints = append(constraints, fmt.Sprintf("CHECK (%s)", x.Statement))
+            //case xql.CONSTRAINT_EXCLUDE:
+            //constraints = append(constraints, "NOT NUL")
+        case xql.CONSTRAINT_FOREIGNKEY:
+            ondelete := ""
+            onupdate := ""
+            if x.OnDelete != "" {
+                ondelete = "ON DELETE " + x.OnDelete
+            }
+            if x.OnUpdate != "" {
+                onupdate = "ON UPDATE " + x.OnUpdate
+            }
+            xs := strings.Split(x.Statement, ".")
+            if len(xs) > 1 {
+                tt := strings.Join(xs[:len(xs)-1], ".")
+                tc := xs[len(xs)-1]
+                constraints = append(constraints, fmt.Sprintf("REFERENCES %s (%s) %s %s", tt, tc, onupdate, ondelete))
+            } else {
+                constraints = append(constraints, fmt.Sprintf("REFERENCES %s %s %s", xs[0], onupdate, ondelete))
+            }
 
-         case xql.CONSTRAINT_PRIMARYKEY:
-             constraints = append(constraints, "PRIMARY KEY")
-         }
-     }
-     if len(constraints) < 1 {
-         return ""
-     }
-     return strings.Join(constraints, " ")
- }
+        case xql.CONSTRAINT_PRIMARYKEY:
+            constraints = append(constraints, "PRIMARY KEY")
+        }
+    }
+    if len(constraints) < 1 {
+        return ""
+    }
+    return strings.Join(constraints, " ")
+}
 
- func makeConstraints(t *xql.Table, idx int, c... *xql.Constraint) (ret []string) {
-     for _, x := range c {
-         fields := []string{}
-         for _,cc := range x.Columns {
-             fields = append(fields, cc.FieldName)
-         }
-         field_str := strings.Join(fields, ",")
-         name_str := fmt.Sprintf("%s_%s", t.BaseTableName(), strings.Join(fields,"_"))
-         switch x.Type {
-         //case xql.CONSTRAINT_NOT_NULL:
-         //    ret = append(ret, fmt.Sprintf("NOT NUL"))
-         case xql.CONSTRAINT_UNIQUE:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT %s_unique UNIQUE (%s)", name_str, field_str))
-         case xql.CONSTRAINT_CHECK:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT %s_check CHECK (%s)", name_str, x.Statement))
-         case xql.CONSTRAINT_EXCLUDE:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT %s_exclude EXCLUDE USING %s", name_str, x.Statement))
-         case xql.CONSTRAINT_FOREIGNKEY:
-             ondelete := ""
-             onupdate := ""
-             if x.OnDelete != "" {
-                 ondelete = "ON DELETE "+x.OnDelete
-             }
-             if x.OnUpdate != "" {
-                 onupdate = "ON UPDATE "+x.OnUpdate
-             }
-             ret = append(ret,
-                 fmt.Sprintf("CONSTRAINT %s_fkey FOREIGN KEY (%s) REFERENCES %s %s %s",
-                     name_str, field_str, x.Statement, onupdate, ondelete))
-         case xql.CONSTRAINT_PRIMARYKEY:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", name_str, field_str))
-         }
-     }
-     return
- }
+func makeConstraints(t *xql.Table, idx int, c ... *xql.Constraint) (ret []string) {
+    for _, x := range c {
+        fields := []string{}
+        for _, cc := range x.Columns {
+            fields = append(fields, cc.FieldName)
+        }
+        field_str := strings.Join(fields, ",")
+        name_str := fmt.Sprintf("%s_%s", t.BaseTableName(), strings.Join(fields, "_"))
+        switch x.Type {
+        //case xql.CONSTRAINT_NOT_NULL:
+        //    ret = append(ret, fmt.Sprintf("NOT NUL"))
+        case xql.CONSTRAINT_UNIQUE:
+            ret = append(ret, fmt.Sprintf("CONSTRAINT %s_unique UNIQUE (%s)", name_str, field_str))
+        case xql.CONSTRAINT_CHECK:
+            ret = append(ret, fmt.Sprintf("CONSTRAINT %s_check CHECK (%s)", name_str, x.Statement))
+        case xql.CONSTRAINT_EXCLUDE:
+            ret = append(ret, fmt.Sprintf("CONSTRAINT %s_exclude EXCLUDE USING %s", name_str, x.Statement))
+        case xql.CONSTRAINT_FOREIGNKEY:
+            ondelete := ""
+            onupdate := ""
+            if x.OnDelete != "" {
+                ondelete = "ON DELETE " + x.OnDelete
+            }
+            if x.OnUpdate != "" {
+                onupdate = "ON UPDATE " + x.OnUpdate
+            }
+            ret = append(ret,
+                fmt.Sprintf("CONSTRAINT %s_fkey FOREIGN KEY (%s) REFERENCES %s %s %s",
+                    name_str, field_str, x.Statement, onupdate, ondelete))
+        case xql.CONSTRAINT_PRIMARYKEY:
+            ret = append(ret, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", name_str, field_str))
+        }
+    }
+    return
+}
 
- func makeIndexes(t *xql.Table, idx int, i... *xql.Index) (ret []string) {
-     for _, ii := range i {
-         fs := []string{}
-         for _, c := range ii.Columns {
-             fs = append(fs, c.FieldName)
-         }
-         tp := ""
-         switch ii.Type {
-         case xql.INDEX_B_TREE:
-             tp = "USING btree"
-         case xql.INDEX_HASH:
-             tp = "USING hash"
-         case xql.INDEX_BRIN:
-             tp = "USING brin"
-         case xql.INDEX_GIST:
-             tp = "USING gist"
-         case xql.INDEX_SP_GIST:
-             tp = "USING sp-gist"
-         case xql.INDEX_GIN:
-             tp = "USING gin"
-         }
-         // CREATE INDEX test2_mm_idx ON test2 (major, minor);
-         s := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s %s (\"%s\");",ii.Name , t.BaseTableName(), tp, strings.Join(fs, ","))
-         ret = append(ret, s)
-     }
-     return
- }
+func makeIndexes(t *xql.Table, idx int, i ... *xql.Index) (ret []string) {
+    for _, ii := range i {
+        fs := []string{}
+        for _, c := range ii.Columns {
+            fs = append(fs, c.FieldName)
+        }
+        tp := ""
+        switch ii.Type {
+        case xql.INDEX_B_TREE:
+            tp = "USING btree"
+        case xql.INDEX_HASH:
+            tp = "USING hash"
+        case xql.INDEX_BRIN:
+            tp = "USING brin"
+        case xql.INDEX_GIST:
+            tp = "USING gist"
+        case xql.INDEX_SP_GIST:
+            tp = "USING sp-gist"
+        case xql.INDEX_GIN:
+            tp = "USING gin"
+        }
+        // CREATE INDEX test2_mm_idx ON test2 (major, minor);
+        s := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s %s (\"%s\");", ii.Name, t.BaseTableName(), tp, strings.Join(fs, ","))
+        ret = append(ret, s)
+    }
+    return
+}
 
- // Drop
- // Implement the IDialect interface for generate DROP statement
+// Drop
+// Implement the IDialect interface for generate DROP statement
 func (pb PostgresDialect) Drop(t *xql.Table, force bool) (stm string, args []interface{}, err error) {
     if nil == t {
         err = errors.New("Table can not be nil !")
@@ -332,12 +332,13 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
         fv.Kind()
         //if fv.Interface() == reflect.Zero(fv.Type()).Interface() {
         if ! fv.IsValid() || isEmptyValue(fv) {
-        //if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()).Interface() == fv.Interface() {
-            if column.PrimaryKey && column.Default == nil {
-                continue
-            }
-            args = append(args, column.Default)
-        }else{
+            //if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()).Interface() == fv.Interface() {
+            //    if column.PrimaryKey && column.Default == nil {
+            //        continue
+            //    }
+            //    args = append(args, column.Default)
+            continue
+        } else {
             args = append(args, fv.Interface())
         }
         i += 1
@@ -429,7 +430,7 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
 }
 
 func CreateSchema(db *sql.DB, schema string) error {
-    s := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s",schema)
+    s := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", schema)
     //fmt.Println(">>>", s)
     if _, e := db.Exec(s); nil != e {
         return e
@@ -437,8 +438,8 @@ func CreateSchema(db *sql.DB, schema string) error {
     return nil
 }
 
-func Initialize_HSTORE(db *sql.DB, schema... string) error {
-    s := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS hstore SCHEMA %s",schema[0])
+func Initialize_HSTORE(db *sql.DB, schema ... string) error {
+    s := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS hstore SCHEMA %s", schema[0])
     //fmt.Println(">>>", s)
     if _, e := db.Exec(s); nil != e {
         return e
@@ -446,8 +447,8 @@ func Initialize_HSTORE(db *sql.DB, schema... string) error {
     return nil
 }
 
-func Initialize_UUID(db *sql.DB, schema... string) error {
-    s := fmt.Sprintf("CREATE EXTENSION  IF NOT EXISTS \"uuid-ossp\" SCHEMA %s",schema[0])
+func Initialize_UUID(db *sql.DB, schema ... string) error {
+    s := fmt.Sprintf("CREATE EXTENSION  IF NOT EXISTS \"uuid-ossp\" SCHEMA %s", schema[0])
     //fmt.Println(">>>", s)
     if _, e := db.Exec(s); nil != e {
         return e
