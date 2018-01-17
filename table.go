@@ -46,7 +46,7 @@ type TablePreInsert interface {
     PreInsert(*Table, *Session)
 }
 
-type TabelPreUpdate interface {
+type TablePreUpdate interface {
     PreUpdate(*Table, *Session)
 }
 
