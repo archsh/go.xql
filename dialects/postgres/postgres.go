@@ -333,7 +333,7 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
         //if fv.Interface() == reflect.Zero(fv.Type()).Interface() {
         if ! fv.IsValid() || isEmptyValue(fv) {
         //if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()).Interface() == fv.Interface() {
-            if column.Default == nil {
+            if column.PrimaryKey && column.Default == nil {
                 continue
             }
             args = append(args, column.Default)
