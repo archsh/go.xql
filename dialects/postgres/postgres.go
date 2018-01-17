@@ -291,6 +291,24 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
     return
 }
 
+func isEmptyValue(v reflect.Value) bool {
+    switch v.Kind() {
+    case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+        return v.Len() == 0
+    case reflect.Bool:
+        return !v.Bool()
+    case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+        return v.Int() == 0
+    case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+        return v.Uint() == 0
+    case reflect.Float32, reflect.Float64:
+        return v.Float() == 0
+    case reflect.Interface, reflect.Ptr:
+        return v.IsNil()
+    }
+    return false
+}
+
 // Insert
 // Implement the IDialect interface to generate insert statement
 func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (s string, args []interface{}, err error) {
@@ -304,18 +322,27 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
             col = append(col, x.FieldName)
         }
     }
-    for i, n := range col {
+    var i int
+    for _, n := range col {
         column, ok := t.GetColumn(n)
         if ! ok {
             continue
         }
-        if fv := reflect.Indirect(r).FieldByName(column.ElemName); ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()) == fv {
+        fv := reflect.Indirect(r).FieldByName(column.ElemName)
+        fv.Kind()
+        //if fv.Interface() == reflect.Zero(fv.Type()).Interface() {
+        if ! fv.IsValid() || isEmptyValue(fv) {
+        //if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()).Interface() == fv.Interface() {
+            if column.Default == nil {
+                continue
+            }
             args = append(args, column.Default)
         }else{
             args = append(args, fv.Interface())
         }
+        i += 1
         cols = append(cols, fmt.Sprintf(`"%s"`, column.FieldName))
-        vals = append(vals, fmt.Sprintf("$%d", i+1))
+        vals = append(vals, fmt.Sprintf("$%d", i))
 
     }
     s = fmt.Sprintf("%s (%s) VALUES(%s)", s, strings.Join(cols, ","), strings.Join(vals, ","))
