@@ -266,11 +266,25 @@ func (self *QuerySet) Update(vals interface{}) (int64, error) {
         }
     } else if cx, ok := vals.([]UpdateColumn); ok {
         cols = cx
+    } else if reflect.TypeOf(vals) == reflect.TypeOf(self.table.entity) {
+        r := reflect.ValueOf(vals)
+        for _, col := range self.table.columns {
+            if col.PrimaryKey {
+                continue
+            }
+            fv := reflect.Indirect(r).FieldByName(col.ElemName)
+            if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()) == fv {
+                continue
+            }else{
+                cols = append(cols, UpdateColumn{Field:col.FieldName, Operator:"=", Value:fv.Interface()})
+            }
+        }
     }
     s, args, err := self.session.getDialect().Update(self.table, self.filters, cols...)
     if nil != err {
         return 0, err
     }
+    //fmt.Println(">>>Update:", s, args)
     var ret sql.Result
     ret, err = self.session.doExec(s, args...)
     if nil != err {
