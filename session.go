@@ -68,8 +68,8 @@ func (self *Session) Close() {
     }
 }
 
-func (self *Session) Query(table *Table, columns ...interface{}) *QuerySet {
-    qs := &QuerySet{session: self, offset: -1, limit: -1}
+func (self *Session) Query(table *Table, columns ...interface{}) QuerySet {
+    qs := QuerySet{session: self, offset: -1, limit: -1}
     qs.table = table
     if len(columns) > 0 {
         for _, c := range columns {
@@ -126,6 +126,7 @@ func (self *Session) Rollback() error {
 }
 
 func (self *Session) doExec(query string, args ...interface{}) (sql.Result, error) {
+    fmt.Println("Session.doExec:", query, args)
     if self.tx != nil {
         if self.verbose {
             //log.Debugln("doExec in Tx: ", query, args)

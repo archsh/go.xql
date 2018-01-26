@@ -111,7 +111,7 @@ func makeQueryOrder(table *Table, s string) QueryOrder {
     return qo
 }
 
-func (self *QuerySet) Filter(cons ...interface{}) *QuerySet {
+func (self QuerySet) Filter(cons ...interface{}) QuerySet {
     for _, con := range cons {
         if vs, ok := con.(string); ok {
             self.filters = append(self.filters, QueryFilter{
@@ -136,7 +136,7 @@ func (self *QuerySet) Filter(cons ...interface{}) *QuerySet {
     return self
 }
 
-func (self *QuerySet) OrderBy(orders ...interface{}) *QuerySet {
+func (self QuerySet) OrderBy(orders ...interface{}) QuerySet {
     for _, x := range orders {
         switch x.(type) {
         case string:
@@ -153,17 +153,17 @@ func (self *QuerySet) OrderBy(orders ...interface{}) *QuerySet {
     return self
 }
 
-func (self *QuerySet) Offset(offset int64) *QuerySet {
+func (self QuerySet) Offset(offset int64) QuerySet {
     self.offset = offset
     return self
 }
 
-func (self *QuerySet) Limit(limit int64) *QuerySet {
+func (self QuerySet) Limit(limit int64) QuerySet {
     self.limit = limit
     return self
 }
 
-func (self *QuerySet) Count(cols ...string) (int64, error) {
+func (self QuerySet) Count(cols ...string) (int64, error) {
     var fieldname string
     if len(cols) > 0 {
         fieldname = cols[0]
@@ -186,7 +186,7 @@ func (self *QuerySet) Count(cols ...string) (int64, error) {
     return n, nil
 }
 
-func (self *QuerySet) All() (*XRows, error) {
+func (self QuerySet) All() (*XRows, error) {
     if len(self.queries) < 1 {
         for _, col := range self.table.m_columns {
             self.queries = append(self.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
@@ -201,11 +201,11 @@ func (self *QuerySet) All() (*XRows, error) {
     if nil != err {
         return nil, err
     }
-    xrows := &XRows{rows: rows, qs: self}
+    xrows := &XRows{rows: rows, qs: &self}
     return xrows, nil
 }
 
-func (self *QuerySet) One() *XRow {
+func (self QuerySet) One() *XRow {
     if len(self.queries) < 1 {
         for _, col := range self.table.m_columns {
             self.queries = append(self.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
@@ -216,12 +216,13 @@ func (self *QuerySet) One() *XRow {
     if nil != err {
         return nil
     }
+    fmt.Println("One:>", s, args)
     row := self.session.doQueryRow(s, args...)
-    xrow := &XRow{row: row, qs: self}
+    xrow := &XRow{row: row, qs: &self}
     return xrow
 }
 
-func (self *QuerySet) Get(pks ...interface{}) *XRow {
+func (self QuerySet) Get(pks ...interface{}) *XRow {
     if len(self.queries) < 1 {
         for _, col := range self.table.m_columns {
             self.queries = append(self.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
@@ -245,16 +246,19 @@ func (self *QuerySet) Get(pks ...interface{}) *XRow {
         return nil
     }
     row := self.session.doQueryRow(s, args...)
-    xrow := &XRow{row: row, qs: self}
+    xrow := &XRow{row: row, qs: &self}
     return xrow
 }
 
-func (self *QuerySet) Update(vals interface{}) (int64, error) {
+func (self QuerySet) Update(vals interface{}) (int64, error) {
     cols := []UpdateColumn{}
+    //fmt.Println("Update:>", self.table.m_columns)
     if cm, ok := vals.(map[string]interface{}); ok {
         for k, v := range cm {
             var fk string
-            if c, ok := self.table.m_columns[k]; ok {
+            if c, ok := self.table.x_columns[k]; ok {
+                fk = c.FieldName
+            } else if c, ok := self.table.m_columns[k]; ok {
                 fk = c.FieldName
             } else if c, ok := self.table.j_columns[k]; ok {
                 fk = c.FieldName
@@ -296,7 +300,7 @@ func (self *QuerySet) Update(vals interface{}) (int64, error) {
     return 0, nil
 }
 
-func (self *QuerySet) Delete() (int64, error) {
+func (self QuerySet) Delete() (int64, error) {
     s, args, err := self.session.getDialect().Delete(self.table, self.filters)
     if nil != err {
         return 0, err
@@ -312,7 +316,7 @@ func (self *QuerySet) Delete() (int64, error) {
     return 0, nil
 }
 
-func (self *QuerySet) Insert(objs ...interface{}) (int64, error) {
+func (self QuerySet) Insert(objs ...interface{}) (int64, error) {
     var rows int64 = 0
     var cols []string
     if len(self.queries) > 0 {
