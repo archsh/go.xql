@@ -216,7 +216,7 @@ func (self QuerySet) One() *XRow {
     if nil != err {
         return nil
     }
-    fmt.Println("One:>", s, args)
+    //fmt.Println("One:>", s, args)
     row := self.session.doQueryRow(s, args...)
     xrow := &XRow{row: row, qs: &self}
     return xrow
