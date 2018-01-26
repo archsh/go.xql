@@ -142,6 +142,7 @@ func (self *Session) doExec(query string, args ...interface{}) (sql.Result, erro
 }
 
 func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, error) {
+    fmt.Println("Session.doQuery:", query)
     if self.tx != nil {
         if self.verbose {
             //log.Debugln("doQuery in Tx: ", query, args)
@@ -157,6 +158,7 @@ func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, erro
 }
 
 func (self *Session) doQueryRow(query string, args ...interface{}) *sql.Row {
+    fmt.Println("Session.doQueryRow:", query)
     if self.tx != nil {
         if self.verbose {
             //log.Debugln("doQueryRow in Tx: ", query, args)
