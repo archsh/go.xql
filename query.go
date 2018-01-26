@@ -326,7 +326,8 @@ func (self QuerySet) Insert(objs ...interface{}) (int64, error) {
     }
     for _, obj := range objs {
         if reflect.TypeOf(obj) != reflect.TypeOf(self.table.entity) {
-            return 0, errors.New("Invalid data type.")
+            return 0, errors.New(fmt.Sprintf("Invalid data type: %s <> %s",reflect.TypeOf(obj).String(),
+                reflect.TypeOf(self.table.entity).String()))
         }
         if pobj, ok := obj.(TablePreInsert); ok {
             pobj.PreInsert(self.table, self.session)

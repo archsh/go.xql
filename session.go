@@ -126,7 +126,7 @@ func (self *Session) Rollback() error {
 }
 
 func (self *Session) doExec(query string, args ...interface{}) (sql.Result, error) {
-    fmt.Println("Session.doExec:", query, args)
+    fmt.Println("Session.doExec:", query)
     if self.tx != nil {
         if self.verbose {
             //log.Debugln("doExec in Tx: ", query, args)
