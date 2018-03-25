@@ -350,6 +350,50 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
     return
 }
 
+
+// Insert
+// Implement the IDialect interface to generate insert statement
+func (pb PostgresDialect) InsertWithInsertedId(t *xql.Table, obj interface{}, insertedId string, col ...string) (s string, args []interface{}, err error) {
+    s = "INSERT INTO "
+    s += t.TableName()
+    var cols []string
+    var vals []string
+    r := reflect.ValueOf(obj)
+    if len(col) < 1 {
+        for _, x := range t.GetColumns() {
+            col = append(col, x.FieldName)
+        }
+    }
+    var i int
+    for _, n := range col {
+        column, ok := t.GetColumn(n)
+        if ! ok {
+            continue
+        }
+        fv := reflect.Indirect(r).FieldByName(column.ElemName)
+        fv.Kind()
+        //if fv.Interface() == reflect.Zero(fv.Type()).Interface() {
+        if ! fv.IsValid() || isEmptyValue(fv) {
+            //if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()).Interface() == fv.Interface() {
+            //    if column.PrimaryKey && column.Default == nil {
+            //        continue
+            //    }
+            //    args = append(args, column.Default)
+            continue
+        } else {
+            args = append(args, fv.Interface())
+        }
+        i += 1
+        cols = append(cols, fmt.Sprintf(`"%s"`, column.FieldName))
+        vals = append(vals, fmt.Sprintf("$%d", i))
+
+    }
+    s = fmt.Sprintf("%s (%s) VALUES(%s) RETURNING %s",
+        s, strings.Join(cols, ","), strings.Join(vals, ","), insertedId)
+    return
+}
+
+
 // Update
 // Implement the IDialect interface to generate UPDATE statement
 func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {

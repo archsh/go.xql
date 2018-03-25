@@ -316,6 +316,38 @@ func (self QuerySet) Delete() (int64, error) {
     return 0, nil
 }
 
+
+func (self QuerySet) InsertWithInsertedId(obj interface{}, idname string, id interface{}) error {
+    var cols []string
+    if len(self.queries) > 0 {
+        for _, x := range self.queries {
+            cols = append(cols, x.FieldName)
+        }
+    }
+    if reflect.TypeOf(obj) != reflect.TypeOf(self.table.entity) {
+        return errors.New(fmt.Sprintf("Invalid data type: %s <> %s",reflect.TypeOf(obj).String(),
+            reflect.TypeOf(self.table.entity).String()))
+    }
+    if pobj, ok := obj.(TablePreInsert); ok {
+        pobj.PreInsert(self.table, self.session)
+    }
+    s, args, err := self.session.getDialect().InsertWithInsertedId(self.table, obj, idname, cols...)
+    if nil != err {
+        return err
+    }
+    //fmt.Println("Insert SQL:>", s, args)
+    err = self.session.doQueryRow(s, args...).Scan(id)
+    if nil != err {
+        //fmt.Println(">>>Insert SQL:>", s, args, err)
+        return err
+    } else {
+        if pobj, ok := obj.(TablePostInsert); ok {
+            pobj.PostInsert(self.table, self.session)
+        }
+    }
+    return nil
+}
+
 func (self QuerySet) Insert(objs ...interface{}) (int64, error) {
     var rows int64 = 0
     var cols []string
