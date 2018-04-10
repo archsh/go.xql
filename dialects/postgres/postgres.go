@@ -415,6 +415,7 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
         args = append(args, uc.Value)
     }
 
+    //var n int
     for i, f := range filters {
         var cause string
         switch f.Condition {
@@ -427,14 +428,24 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
             cause = "WHERE"
         }
         if f.Operator == "" {
-            s = fmt.Sprintf("%s %s %s", s, cause, f.Field)
+            s = fmt.Sprintf(`%s %s %s`, s, cause, f.Field)
         } else if f.Reversed {
             n += 1
-            s = fmt.Sprintf("%s %s $%d %s %s", s, cause, n, f.Operator, f.Field)
+            if f.Function != "" {
+                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, f.Field)
+            } else {
+                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, f.Field)
+            }
+
             args = append(args, f.Value)
         } else {
             n += 1
-            s = fmt.Sprintf("%s %s %s %s $%d", s, cause, f.Field, f.Operator, n)
+            if f.Function != "" {
+                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
+            } else {
+                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, f.Field, f.Operator, n)
+            }
+
             args = append(args, f.Value)
         }
     }
@@ -459,14 +470,24 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
             cause = "WHERE"
         }
         if f.Operator == "" {
-            s = fmt.Sprintf("%s %s %s", s, cause, f.Field)
+            s = fmt.Sprintf(`%s %s %s`, s, cause, f.Field)
         } else if f.Reversed {
             n += 1
-            s = fmt.Sprintf("%s %s $%d %s %s", s, cause, n, f.Operator, f.Field)
+            if f.Function != "" {
+                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, f.Field)
+            } else {
+                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, f.Field)
+            }
+
             args = append(args, f.Value)
         } else {
             n += 1
-            s = fmt.Sprintf("%s %s %s %s $%d", s, cause, f.Field, f.Operator, n)
+            if f.Function != "" {
+                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
+            } else {
+                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, f.Field, f.Operator, n)
+            }
+
             args = append(args, f.Value)
         }
     }
