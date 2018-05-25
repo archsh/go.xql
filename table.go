@@ -43,27 +43,43 @@ type TableIndexed interface {
 // TablePreInsert
 // Which entity implemented will be called when xql create a new struct instance.
 type TablePreInsert interface {
-    PreInsert(*Table, *Session)
+    PreInsert(*Table, *Session) error
 }
 
 type TablePreUpdate interface {
-    PreUpdate(*Table, *Session)
+    PreUpdate(*Table, *Session) error
 }
 
 type TablePreDelete interface {
-    PreDelete(*Table, *Session)
+    PreDelete(*Table, *Session) error
 }
 
 type TablePostInsert interface {
-    PostInsert(*Table, *Session)
+    PostInsert(*Table, *Session) error
 }
 
 type TablePostUpdate interface {
-    PostUpdate(*Table, *Session)
+    PostUpdate(*Table, *Session) error
 }
 
 type TablePostDelete interface {
-    PostDelete(*Table, *Session)
+    PostDelete(*Table, *Session) error
+}
+
+type TableCreatable interface {
+    Creatable() bool
+}
+
+type TableUpdatable interface {
+    Updatable() bool
+}
+
+type TableReadable interface {
+    Readable() bool
+}
+
+type TableDeletable interface {
+    Deletable() bool
 }
 
 func (t *Table) TableName() string {
