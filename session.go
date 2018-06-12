@@ -55,12 +55,13 @@ func (self *Session) Create(table *Table) error {
     //return e
 }
 
-func (self *Session) Exec(s string) error {
-    if _, e := self.db.Exec(s); nil != e {
-        return e
-    } else {
-        return nil
-    }
+func (self *Session) Exec(s string,args...interface{}) (sql.Result, error) {
+    return self.doExec(s, args...)
+    //if _, e := self.db.Exec(s); nil != e {
+    //    return e
+    //} else {
+    //    return nil
+    //}
 }
 
 func (self *Session) Close() {
