@@ -7,6 +7,7 @@ import (
     "strings"
     "errors"
     "database/sql"
+    "github.com/archsh.dev/go.xql"
 )
 
 type PostgresDialect struct {
@@ -393,7 +394,13 @@ func (pb PostgresDialect) InsertWithInsertedId(t *xql.Table, obj interface{}, in
     return
 }
 
-
+func makeSetStr(uc xql.UpdateColumn, i int) (string,int) {
+    if uc.Operator == "" {
+        return fmt.Sprintf(`"%s"`, uc.Field), i
+    } else {
+        return fmt.Sprintf(`"%s"%s$%d`, uc.Field, uc.Operator, i), i+1
+    }
+}
 // Update
 // Implement the IDialect interface to generate UPDATE statement
 func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
@@ -403,13 +410,17 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
         panic("Empty Update MappedColumns!!!")
     }
     var n int
+    var ss string
     for i, uc := range cols {
-        n += 1
+        //n += 1
+        ss, n = makeSetStr(uc, n+1)
         if i == 0 {
             //s = s + " SET "
-            s = fmt.Sprintf(`%s SET "%s"=$%d`, s, uc.Field, n)
+            //s = fmt.Sprintf(`%s SET "%s"=$%d`, s, uc.Field, n)
+            s = fmt.Sprintf(`%s SET %s`, s, ss)
         } else {
-            s = fmt.Sprintf(`%s, "%s"=$%d`, s, uc.Field, n)
+            //s = fmt.Sprintf(`%s, "%s"=$%d`, s, uc.Field, n)
+            s = fmt.Sprintf(`%s, %s`, s, ss)
         }
 
         args = append(args, uc.Value)
