@@ -7,7 +7,6 @@ import (
     "strings"
     "errors"
     "database/sql"
-    "github.com/archsh.dev/go.xql"
 )
 
 type PostgresDialect struct {
@@ -394,11 +393,12 @@ func (pb PostgresDialect) InsertWithInsertedId(t *xql.Table, obj interface{}, in
     return
 }
 
-func makeSetStr(uc xql.UpdateColumn, i int) (string,int) {
+func makeSetStr(uc xql.UpdateColumn, i int, args []interface{}) ([]interface{}, string,int) {
     if uc.Operator == "" {
-        return fmt.Sprintf(`"%s"`, uc.Field), i
+        return args, fmt.Sprintf(`%s`, uc.Field), i
     } else {
-        return fmt.Sprintf(`"%s"%s$%d`, uc.Field, uc.Operator, i), i+1
+        args = append(args, uc.Value)
+        return args, fmt.Sprintf(`"%s"%s$%d`, uc.Field, uc.Operator, i+1), i+1
     }
 }
 // Update
@@ -413,7 +413,7 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
     var ss string
     for i, uc := range cols {
         //n += 1
-        ss, n = makeSetStr(uc, n+1)
+        args, ss, n = makeSetStr(uc, n, args)
         if i == 0 {
             //s = s + " SET "
             //s = fmt.Sprintf(`%s SET "%s"=$%d`, s, uc.Field, n)
@@ -422,8 +422,6 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
             //s = fmt.Sprintf(`%s, "%s"=$%d`, s, uc.Field, n)
             s = fmt.Sprintf(`%s, %s`, s, ss)
         }
-
-        args = append(args, uc.Value)
     }
 
     //var n int
