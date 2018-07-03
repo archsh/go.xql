@@ -23,7 +23,11 @@ func (h StringArray) Declare(props xql.PropertySet) string {
 }
 
 func (a StringArray) Elem2Strings() []string {
-    return a
+    var ss []string
+    for _, x := range a {
+        ss = append(ss, fmt.Sprintf("'%s'", strings.Replace(x, "'","\\'",-1)))
+    }
+    return ss
 }
 
 func (a *StringArray) Strings2Elem(ss ...string) error {
