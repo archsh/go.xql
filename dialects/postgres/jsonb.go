@@ -2,7 +2,6 @@ package postgres
 
 import (
     "errors"
-    "reflect"
     "database/sql/driver"
     "encoding/json"
     "github.com/archsh/go.xql"
@@ -47,14 +46,14 @@ func JSONB_Scan(dest interface{}, src interface{}) error {
     if !ok {
         return errors.New("Type assertion .([]byte) failed.")
     }
-    entityType := reflect.TypeOf(dest)
-    obj := reflect.New(entityType)
-    err := json.Unmarshal(source, obj.Elem().Addr().Interface())
+    //entityType := reflect.TypeOf(dest)
+    //obj := reflect.New(entityType)
+    err := json.Unmarshal(source, dest)
     if err != nil {
         return err
     }
     //reflect.Indirect(dest).Set(obj)
-    dest = obj.Elem().Addr().Interface()
+    //dest = obj.Elem().Addr().Interface()
     return nil
 }
 
