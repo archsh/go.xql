@@ -111,6 +111,42 @@ func makeQueryOrder(table *Table, s string) QueryOrder {
     return qo
 }
 
+func (self QuerySet) Where(field string, val interface{}, ops ...string) QuerySet {
+    f := QueryFilter{Field: field, Value: val, Operator: "="}
+    if len(ops) > 0 {
+        f.Operator = ops[0]
+        if len(ops) > 1 {
+            f.Function = ops[1]
+        }
+    }
+    self.filters = append(self.filters, f)
+    return self
+}
+
+func (self QuerySet) And(field string, val interface{}, ops ...string) QuerySet {
+    f := QueryFilter{Field: field, Value: val, Operator: "="}
+    if len(ops) > 0 {
+        f.Operator = ops[0]
+        if len(ops) > 1 {
+            f.Function = ops[1]
+        }
+    }
+    self.filters = append(self.filters, f)
+    return self
+}
+
+func (self QuerySet) Or(field string, val interface{}, ops ...string) QuerySet {
+    f := QueryFilter{Field: field, Value: val, Operator: "=", Condition: CONDITION_OR}
+    if len(ops) > 0 {
+        f.Operator = ops[0]
+        if len(ops) > 1 {
+            f.Function = ops[1]
+        }
+    }
+    self.filters = append(self.filters, f)
+    return self
+}
+
 func (self QuerySet) Filter(cons ...interface{}) QuerySet {
     for _, con := range cons {
         if vs, ok := con.(string); ok {
