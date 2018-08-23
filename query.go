@@ -1,10 +1,10 @@
 package xql
 
 import (
-    "errors"
-    "reflect"
     "database/sql"
+    "errors"
     "fmt"
+    "reflect"
 )
 
 func (qc QueryColumn) String(as ...bool) string {
@@ -109,6 +109,42 @@ func makeQueryOrder(table *Table, s string) QueryOrder {
         qo.Field = s
     }
     return qo
+}
+
+func (self QuerySet) Where(field string, val interface{}, ops ...string) QuerySet {
+    f := QueryFilter{Field: field, Value: val, Operator: "="}
+    if len(ops) > 0 {
+        f.Operator = ops[0]
+        if len(ops) > 1 {
+            f.Function = ops[1]
+        }
+    }
+    self.filters = append(self.filters, f)
+    return self
+}
+
+func (self QuerySet) And(field string, val interface{}, ops ...string) QuerySet {
+    f := QueryFilter{Field: field, Value: val, Operator: "="}
+    if len(ops) > 0 {
+        f.Operator = ops[0]
+        if len(ops) > 1 {
+            f.Function = ops[1]
+        }
+    }
+    self.filters = append(self.filters, f)
+    return self
+}
+
+func (self QuerySet) Or(field string, val interface{}, ops ...string) QuerySet {
+    f := QueryFilter{Field: field, Value: val, Operator: "=", Condition: CONDITION_OR}
+    if len(ops) > 0 {
+        f.Operator = ops[0]
+        if len(ops) > 1 {
+            f.Function = ops[1]
+        }
+    }
+    self.filters = append(self.filters, f)
+    return self
 }
 
 func (self QuerySet) Filter(cons ...interface{}) QuerySet {
@@ -231,11 +267,11 @@ func (self QuerySet) Get(pks ...interface{}) *XRow {
     if len(pks) != len(self.table.primary_keys) {
         panic("Primary Key number not match!")
     }
-    self.filters = make([]QueryFilter,0,len(pks))
+    self.filters = make([]QueryFilter, 0, len(pks))
     for i, pk := range pks {
         filter := QueryFilter{
-            Field: self.table.primary_keys[i].FieldName,
-            Value: pk,
+            Field:    self.table.primary_keys[i].FieldName,
+            Value:    pk,
             Operator: "=",
         }
         self.filters = append(self.filters, filter)
@@ -277,10 +313,10 @@ func (self QuerySet) Update(vals interface{}) (int64, error) {
                 continue
             }
             fv := reflect.Indirect(r).FieldByName(col.ElemName)
-            if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()) == fv {
+            if (fv.Kind() == reflect.Ptr && fv.IsNil()) || reflect.Zero(fv.Type()) == fv {
                 continue
-            }else{
-                cols = append(cols, UpdateColumn{Field:col.FieldName, Operator:"=", Value:fv.Interface()})
+            } else {
+                cols = append(cols, UpdateColumn{Field: col.FieldName, Operator: "=", Value: fv.Interface()})
             }
         }
     }
@@ -316,7 +352,6 @@ func (self QuerySet) Delete() (int64, error) {
     return 0, nil
 }
 
-
 func (self QuerySet) InsertWithInsertedId(obj interface{}, idname string, id interface{}) error {
     var cols []string
     if len(self.queries) > 0 {
@@ -325,7 +360,7 @@ func (self QuerySet) InsertWithInsertedId(obj interface{}, idname string, id int
         }
     }
     if reflect.TypeOf(obj) != reflect.TypeOf(self.table.entity) {
-        return errors.New(fmt.Sprintf("Invalid data type: %s <> %s",reflect.TypeOf(obj).String(),
+        return errors.New(fmt.Sprintf("Invalid data type: %s <> %s", reflect.TypeOf(obj).String(),
             reflect.TypeOf(self.table.entity).String()))
     }
     if pobj, ok := obj.(TablePreInsert); ok {
@@ -358,7 +393,7 @@ func (self QuerySet) Insert(objs ...interface{}) (int64, error) {
     }
     for _, obj := range objs {
         if reflect.TypeOf(obj) != reflect.TypeOf(self.table.entity) {
-            return 0, errors.New(fmt.Sprintf("Invalid data type: %s <> %s",reflect.TypeOf(obj).String(),
+            return 0, errors.New(fmt.Sprintf("Invalid data type: %s <> %s", reflect.TypeOf(obj).String(),
                 reflect.TypeOf(self.table.entity).String()))
         }
         if pobj, ok := obj.(TablePreInsert); ok {
