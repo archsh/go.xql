@@ -66,7 +66,7 @@ func (self *Session) Exec(s string,args...interface{}) (sql.Result, error) {
 
 func (self *Session) Close() {
     if self.tx != nil {
-        self.tx.Commit()
+        self.tx.Rollback()
     }
 }
 
