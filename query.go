@@ -95,8 +95,10 @@ func (self *XRows) Next() bool {
 }
 
 func (self *XRows) Close() {
-    self.rows.Close()
-    self.rows = nil
+    if self.rows != nil {
+        self.rows.Close()
+        self.rows = nil
+    }
 }
 
 func makeQueryOrder(table *Table, s string) QueryOrder {
