@@ -1,18 +1,27 @@
 package xql
 
 import (
-    "errors"
-    "reflect"
     "database/sql"
+    "errors"
     "fmt"
+    "reflect"
+    "regexp"
 )
+
+var pure_field_rex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]*$")
+
+func isPureField(s string) bool {
+    return pure_field_rex.MatchString(s)
+}
 
 func (qc QueryColumn) String(as ...bool) string {
     s := ""
     if qc.Function != "" {
         s = fmt.Sprintf(`%s("%s")`, qc.Function, qc.FieldName) //qc.Function+"("+qc.FieldName+")"
-    } else {
+    } else if isPureField(qc.FieldName) {
         s = fmt.Sprintf(`"%s"`, qc.FieldName)
+    } else {
+        s = qc.FieldName
     }
     if qc.Alias != "" && len(as) > 0 && as[0] {
         s = s + " AS " + qc.Alias
@@ -269,11 +278,11 @@ func (self QuerySet) Get(pks ...interface{}) *XRow {
     if len(pks) != len(self.table.primary_keys) {
         panic("Primary Key number not match!")
     }
-    self.filters = make([]QueryFilter,0,len(pks))
+    self.filters = make([]QueryFilter, 0, len(pks))
     for i, pk := range pks {
         filter := QueryFilter{
-            Field: self.table.primary_keys[i].FieldName,
-            Value: pk,
+            Field:    self.table.primary_keys[i].FieldName,
+            Value:    pk,
             Operator: "=",
         }
         self.filters = append(self.filters, filter)
@@ -315,10 +324,10 @@ func (self QuerySet) Update(vals interface{}) (int64, error) {
                 continue
             }
             fv := reflect.Indirect(r).FieldByName(col.ElemName)
-            if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()) == fv {
+            if (fv.Kind() == reflect.Ptr && fv.IsNil()) || reflect.Zero(fv.Type()) == fv {
                 continue
-            }else{
-                cols = append(cols, UpdateColumn{Field:col.FieldName, Operator:"=", Value:fv.Interface()})
+            } else {
+                cols = append(cols, UpdateColumn{Field: col.FieldName, Operator: "=", Value: fv.Interface()})
             }
         }
     }
@@ -354,7 +363,6 @@ func (self QuerySet) Delete() (int64, error) {
     return 0, nil
 }
 
-
 func (self QuerySet) InsertWithInsertedId(obj interface{}, idname string, id interface{}) error {
     var cols []string
     if len(self.queries) > 0 {
@@ -363,7 +371,7 @@ func (self QuerySet) InsertWithInsertedId(obj interface{}, idname string, id int
         }
     }
     if reflect.TypeOf(obj) != reflect.TypeOf(self.table.entity) {
-        return errors.New(fmt.Sprintf("Invalid data type: %s <> %s",reflect.TypeOf(obj).String(),
+        return errors.New(fmt.Sprintf("Invalid data type: %s <> %s", reflect.TypeOf(obj).String(),
             reflect.TypeOf(self.table.entity).String()))
     }
     if pobj, ok := obj.(TablePreInsert); ok {
@@ -396,7 +404,7 @@ func (self QuerySet) Insert(objs ...interface{}) (int64, error) {
     }
     for _, obj := range objs {
         if reflect.TypeOf(obj) != reflect.TypeOf(self.table.entity) {
-            return 0, errors.New(fmt.Sprintf("Invalid data type: %s <> %s",reflect.TypeOf(obj).String(),
+            return 0, errors.New(fmt.Sprintf("Invalid data type: %s <> %s", reflect.TypeOf(obj).String(),
                 reflect.TypeOf(self.table.entity).String()))
         }
         if pobj, ok := obj.(TablePreInsert); ok {

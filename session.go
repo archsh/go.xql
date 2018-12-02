@@ -74,12 +74,13 @@ func (self *Session) Query(table *Table, columns ...interface{}) QuerySet {
     qs := QuerySet{session: self, offset: -1, limit: -1}
     qs.table = table
     if len(columns) > 0 {
-        for _, c := range columns {
+        for i, c := range columns {
             if qc, ok := c.(QueryColumn); ok {
                 qs.queries = append(qs.queries, qc)
             } else if qcn, ok := c.(string); ok {
                 if col, ok := qs.table.GetColumn(qcn); !ok {
-                    panic("Invalid column name:" + qcn)
+                    //panic("Invalid column name:" + qcn)
+                    qs.queries = append(qs.queries, QueryColumn{FieldName: qcn, Alias: fmt.Sprintf("aa%d",i)})
                 } else {
                     qs.queries = append(qs.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
                 }
