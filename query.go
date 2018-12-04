@@ -122,6 +122,17 @@ func makeQueryOrder(table *Table, s string) QueryOrder {
     return qo
 }
 
+func Where(field string, val interface{}, ops ...string) QueryFilter {
+    f := QueryFilter{Field: field, Value: val, Operator: "="}
+    if len(ops) > 0 {
+        f.Operator = ops[0]
+        if len(ops) > 1 {
+            f.Function = ops[1]
+        }
+    }
+    return f
+}
+
 func (self QuerySet) Where(field string, val interface{}, ops ...string) QuerySet {
     f := QueryFilter{Field: field, Value: val, Operator: "="}
     if len(ops) > 0 {
@@ -298,7 +309,7 @@ func (self QuerySet) Get(pks ...interface{}) *XRow {
 }
 
 func (self QuerySet) Update(vals interface{}) (int64, error) {
-    cols := []UpdateColumn{}
+    var cols []UpdateColumn
     //fmt.Println("Update:>", self.table.m_columns)
     if cm, ok := vals.(map[string]interface{}); ok {
         for k, v := range cm {
