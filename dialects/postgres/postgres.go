@@ -252,18 +252,18 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
         } else if f.Reversed {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s %s($%d) %s "%s"`, s, cause, f.Function, n, f.Operator, f.Field)
             } else {
-                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s $%d %s "%s"`, s, cause, n, f.Operator, f.Field)
             }
 
             args = append(args, f.Value)
         } else {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
+                s = fmt.Sprintf(`%s %s "%s" %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
             } else {
-                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, f.Field, f.Operator, n)
+                s = fmt.Sprintf(`%s %s "%s" %s $%d`, s, cause, f.Field, f.Operator, n)
             }
 
             args = append(args, f.Value)
@@ -441,18 +441,18 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
         } else if f.Reversed {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s %s($%d) %s "%s"`, s, cause, f.Function, n, f.Operator, f.Field)
             } else {
-                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s $%d %s "%s"`, s, cause, n, f.Operator, f.Field)
             }
 
             args = append(args, f.Value)
         } else {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
+                s = fmt.Sprintf(`%s %s "%s"" %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
             } else {
-                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, f.Field, f.Operator, n)
+                s = fmt.Sprintf(`%s %s "%s" %s $%d`, s, cause, f.Field, f.Operator, n)
             }
 
             args = append(args, f.Value)
@@ -483,18 +483,18 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
         } else if f.Reversed {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s %s($%d) %s "%s"`, s, cause, f.Function, n, f.Operator, f.Field)
             } else {
-                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s $%d %s "%s"`, s, cause, n, f.Operator, f.Field)
             }
 
             args = append(args, f.Value)
         } else {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
+                s = fmt.Sprintf(`%s %s "%s" %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
             } else {
-                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, f.Field, f.Operator, n)
+                s = fmt.Sprintf(`%s %s "%s" %s $%d`, s, cause, f.Field, f.Operator, n)
             }
 
             args = append(args, f.Value)
