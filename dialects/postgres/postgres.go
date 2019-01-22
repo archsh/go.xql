@@ -82,21 +82,21 @@ func makeInlineConstraint(c ... *xql.Constraint) string {
             //case xql.CONSTRAINT_EXCLUDE:
             //constraints = append(constraints, "NOT NUL")
         case xql.CONSTRAINT_FOREIGNKEY:
-            ondelete := ""
-            onupdate := ""
+            onDelete := ""
+            onUpdate := ""
             if x.OnDelete != "" {
-                ondelete = "ON DELETE " + x.OnDelete
+                onDelete = "ON DELETE " + x.OnDelete
             }
             if x.OnUpdate != "" {
-                onupdate = "ON UPDATE " + x.OnUpdate
+                onUpdate = "ON UPDATE " + x.OnUpdate
             }
             xs := strings.Split(x.Statement, ".")
             if len(xs) > 1 {
                 tt := strings.Join(xs[:len(xs)-1], ".")
                 tc := xs[len(xs)-1]
-                constraints = append(constraints, fmt.Sprintf("REFERENCES %s (%s) %s %s", tt, tc, onupdate, ondelete))
+                constraints = append(constraints, fmt.Sprintf("REFERENCES %s (%s) %s %s", tt, escapePGkw(tc), onUpdate, onDelete))
             } else {
-                constraints = append(constraints, fmt.Sprintf("REFERENCES %s %s %s", xs[0], onupdate, ondelete))
+                constraints = append(constraints, fmt.Sprintf("REFERENCES %s %s %s", xs[0], onUpdate, onDelete))
             }
 
         case xql.CONSTRAINT_PRIMARYKEY:
@@ -121,7 +121,7 @@ func makeConstraints(t *xql.Table, idx int, c ... *xql.Constraint) (ret []string
         //case xql.CONSTRAINT_NOT_NULL:
         //    ret = append(ret, fmt.Sprintf("NOT NUL"))
         case xql.CONSTRAINT_UNIQUE:
-            ret = append(ret, fmt.Sprintf("CONSTRAINT %s_unique UNIQUE (%s)", name_str, field_str))
+            ret = append(ret, fmt.Sprintf("CONSTRAINT %s_unique UNIQUE (%s)", name_str, escapePGkw(field_str)))
         case xql.CONSTRAINT_CHECK:
             ret = append(ret, fmt.Sprintf("CONSTRAINT %s_check CHECK (%s)", name_str, x.Statement))
         case xql.CONSTRAINT_EXCLUDE:
@@ -137,9 +137,9 @@ func makeConstraints(t *xql.Table, idx int, c ... *xql.Constraint) (ret []string
             }
             ret = append(ret,
                 fmt.Sprintf("CONSTRAINT %s_fkey FOREIGN KEY (%s) REFERENCES %s %s %s",
-                    name_str, field_str, x.Statement, onupdate, ondelete))
+                    name_str, escapePGkw(field_str), x.Statement, onupdate, ondelete))
         case xql.CONSTRAINT_PRIMARYKEY:
-            ret = append(ret, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", name_str, field_str))
+            ret = append(ret, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", name_str, escapePGkw(field_str)))
         }
     }
     return
@@ -177,7 +177,7 @@ func makeIndexes(t *xql.Table, idx int, i ... *xql.Index) (ret []string) {
 // Implement the IDialect interface for generate DROP statement
 func (pb PostgresDialect) Drop(t *xql.Table, force bool) (stm string, args []interface{}, err error) {
     if nil == t {
-        err = errors.New("Table can not be nil !")
+        err = errors.New("table can not be nil")
         return
     }
     statements := []string{}
@@ -203,26 +203,26 @@ func (pb PostgresDialect) Drop(t *xql.Table, force bool) (stm string, args []int
 // Implement the IDialect interface for creating table.
 func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
     var createSQL string
-    var table_name string = t.TableName()
-    createSQL = "CREATE TABLE IF NOT EXISTS " + table_name + " ( "
+    var tableName string = t.TableName()
+    createSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " ( "
     var indexes []*xql.Index
     var cols []string
     for _, c := range t.GetColumns() {
-        col_str := fmt.Sprintf(`"%s" %s`, c.FieldName, c.TypeDefine)
+        colStr := fmt.Sprintf(`%s %s`, escapePGkw(c.FieldName), c.TypeDefine)
         if c.Default != nil {
-            col_str = fmt.Sprintf(`%s DEFAULT %s`, col_str, c.Default)
+            colStr = fmt.Sprintf(`%s DEFAULT %s`, colStr, c.Default)
         }
         if len(c.Constraints) > 0 {
-            col_str = fmt.Sprintf(`%s %s`, col_str, makeInlineConstraint(c.Constraints...))
+            colStr = fmt.Sprintf(`%s %s`, colStr, makeInlineConstraint(c.Constraints...))
         }
-        cols = append(cols, col_str)
+        cols = append(cols, colStr)
         indexes = append(indexes, c.Indexes...)
     }
     cols = append(cols, makeConstraints(t, 0, t.GetConstraints()...)...)
     createSQL = createSQL + strings.Join(cols, ", ") + " );"
     indexes = append(indexes, t.GetIndexes()...)
-    indexes_strings := makeIndexes(t, 0, indexes...)
-    s = strings.Join(append([]string{createSQL}, indexes_strings...), "\n")
+    indexesStrings := makeIndexes(t, 0, indexes...)
+    s = strings.Join(append([]string{createSQL}, indexesStrings...), "\n")
     return s, args, err
 }
 
@@ -248,22 +248,22 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
             cause = "WHERE"
         }
         if f.Operator == "" {
-            s = fmt.Sprintf(`%s %s %s`, s, cause, f.Field)
+            s = fmt.Sprintf(`%s %s %s`, s, cause, escapePGkw(f.Field))
         } else if f.Reversed {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s($%d) %s "%s"`, s, cause, f.Function, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, escapePGkw(f.Field))
             } else {
-                s = fmt.Sprintf(`%s %s $%d %s "%s"`, s, cause, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, escapePGkw(f.Field))
             }
 
             args = append(args, f.Value)
         } else {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s "%s" %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
+                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, escapePGkw(f.Field), f.Operator, f.Function, n)
             } else {
-                s = fmt.Sprintf(`%s %s "%s" %s $%d`, s, cause, f.Field, f.Operator, n)
+                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, escapePGkw(f.Field), f.Operator, n)
             }
 
             args = append(args, f.Value)
@@ -273,9 +273,9 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
     for _, o := range orders {
         switch o.Type {
         case xql.ORDER_ASC:
-            s_orders = append(s_orders, fmt.Sprintf(`%s ASC`, o.Field))
+            s_orders = append(s_orders, fmt.Sprintf(`%s ASC`, escapePGkw(o.Field)))
         case xql.ORDER_DESC:
-            s_orders = append(s_orders, fmt.Sprintf(`%s DESC`, o.Field))
+            s_orders = append(s_orders, fmt.Sprintf(`%s DESC`, escapePGkw(o.Field)))
         }
     }
     if len(s_orders) > 0 {
@@ -342,7 +342,7 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
             args = append(args, fv.Interface())
         }
         i += 1
-        cols = append(cols, fmt.Sprintf(`"%s"`, column.FieldName))
+        cols = append(cols, fmt.Sprintf(`%s`, escapePGkw(column.FieldName)))
         vals = append(vals, fmt.Sprintf("$%d", i))
 
     }
@@ -384,7 +384,7 @@ func (pb PostgresDialect) InsertWithInsertedId(t *xql.Table, obj interface{}, in
             args = append(args, fv.Interface())
         }
         i += 1
-        cols = append(cols, fmt.Sprintf(`"%s"`, column.FieldName))
+        cols = append(cols, fmt.Sprintf(`%s`, escapePGkw(column.FieldName)))
         vals = append(vals, fmt.Sprintf("$%d", i))
 
     }
@@ -398,7 +398,7 @@ func makeSetStr(uc xql.UpdateColumn, i int, args []interface{}) ([]interface{}, 
         return args, fmt.Sprintf(`%s`, uc.Field), i
     } else {
         args = append(args, uc.Value)
-        return args, fmt.Sprintf(`"%s"%s$%d`, uc.Field, uc.Operator, i+1), i+1
+        return args, fmt.Sprintf(`%s%s$%d`, escapePGkw(uc.Field), uc.Operator, i+1), i+1
     }
 }
 // Update
@@ -441,18 +441,18 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
         } else if f.Reversed {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s($%d) %s "%s"`, s, cause, f.Function, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, escapePGkw(f.Field))
             } else {
-                s = fmt.Sprintf(`%s %s $%d %s "%s"`, s, cause, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, escapePGkw(f.Field))
             }
 
             args = append(args, f.Value)
         } else {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s "%s"" %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
+                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, escapePGkw(f.Field), f.Operator, f.Function, n)
             } else {
-                s = fmt.Sprintf(`%s %s "%s" %s $%d`, s, cause, f.Field, f.Operator, n)
+                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, escapePGkw(f.Field), f.Operator, n)
             }
 
             args = append(args, f.Value)
@@ -483,18 +483,18 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
         } else if f.Reversed {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s($%d) %s "%s"`, s, cause, f.Function, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, escapePGkw(f.Field))
             } else {
-                s = fmt.Sprintf(`%s %s $%d %s "%s"`, s, cause, n, f.Operator, f.Field)
+                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, escapePGkw(f.Field))
             }
 
             args = append(args, f.Value)
         } else {
             n += 1
             if f.Function != "" {
-                s = fmt.Sprintf(`%s %s "%s" %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
+                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, escapePGkw(f.Field), f.Operator, f.Function, n)
             } else {
-                s = fmt.Sprintf(`%s %s "%s" %s $%d`, s, cause, f.Field, f.Operator, n)
+                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, escapePGkw(f.Field), f.Operator, n)
             }
 
             args = append(args, f.Value)
