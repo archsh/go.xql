@@ -8,10 +8,10 @@ import (
     "regexp"
 )
 
-var pure_field_rex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]*$")
+var pureFieldRex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]*$")
 
 func isPureField(s string) bool {
-    return pure_field_rex.MatchString(s)
+    return pureFieldRex.MatchString(s)
 }
 
 func (qc QueryColumn) String(as ...bool) string {
@@ -46,7 +46,7 @@ type XRow struct {
 
 func (self *XRow) Scan(dest ...interface{}) error {
     if nil == self.row {
-        return errors.New("Nil row.")
+        return errors.New("nil row")
     }
     if len(dest) < 1 {
         panic("Empty output!")
@@ -75,7 +75,7 @@ type XRows struct {
 
 func (self *XRows) Scan(dest ...interface{}) error {
     if nil == self.rows {
-        return errors.New("No rows.")
+        return errors.New("no rows")
     }
     if len(dest) < 1 {
         panic("Empty output!")
@@ -236,7 +236,7 @@ func (self QuerySet) Count(cols ...string) (int64, error) {
     if nil != err {
         return 0, err
     }
-    row := self.session.doQueryRow(s, args...)
+    row := self.session.QueryRow(s, args...)
     var n int64
     if e := row.Scan(&n); nil != e {
         return 0, e
@@ -255,7 +255,7 @@ func (self QuerySet) All() (*XRows, error) {
     if nil != err {
         return nil, err
     }
-    rows, err := self.session.doQuery(s, args...)
+    rows, err := self.session.Query(s, args...)
     if nil != err {
         return nil, err
     }
@@ -275,7 +275,7 @@ func (self QuerySet) One() *XRow {
         return nil
     }
     //fmt.Println("One:>", s, args)
-    row := self.session.doQueryRow(s, args...)
+    row := self.session.QueryRow(s, args...)
     xrow := &XRow{row: row, qs: &self}
     return xrow
 }
@@ -303,7 +303,7 @@ func (self QuerySet) Get(pks ...interface{}) *XRow {
     if nil != err {
         return nil
     }
-    row := self.session.doQueryRow(s, args...)
+    row := self.session.QueryRow(s, args...)
     xrow := &XRow{row: row, qs: &self}
     return xrow
 }
@@ -348,7 +348,7 @@ func (self QuerySet) Update(vals interface{}) (int64, error) {
     }
     //fmt.Println(">>>Update:", s, args)
     var ret sql.Result
-    ret, err = self.session.doExec(s, args...)
+    ret, err = self.session.Exec(s, args...)
     if nil != err {
         return 0, err
     } else {
@@ -364,7 +364,7 @@ func (self QuerySet) Delete() (int64, error) {
         return 0, err
     }
     var ret sql.Result
-    ret, err = self.session.doExec(s, args...)
+    ret, err = self.session.Exec(s, args...)
     if nil != err {
         return 0, err
     } else {
@@ -393,7 +393,7 @@ func (self QuerySet) InsertWithInsertedId(obj interface{}, idname string, id int
         return err
     }
     //fmt.Println("Insert SQL:>", s, args)
-    err = self.session.doQueryRow(s, args...).Scan(id)
+    err = self.session.QueryRow(s, args...).Scan(id)
     if nil != err {
         //fmt.Println(">>>Insert SQL:>", s, args, err)
         return err
@@ -426,7 +426,7 @@ func (self QuerySet) Insert(objs ...interface{}) (int64, error) {
             return 0, err
         }
         //fmt.Println("Insert SQL:>", s, args)
-        _, err = self.session.doExec(s, args...)
+        _, err = self.session.Exec(s, args...)
         if nil != err {
             //fmt.Println(">>>Insert SQL:>", s, args, err)
             return 0, err

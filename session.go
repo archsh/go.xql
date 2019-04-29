@@ -1,8 +1,8 @@
 package xql
 
 import (
-    "errors"
     "database/sql"
+    "errors"
     "fmt"
     "time"
 )
@@ -34,7 +34,7 @@ func (self *Session) Drop(table *Table, force bool) error {
         return e
     }
     if _, e := self.db.Exec(s, args...); nil != e {
-        return errors.New(e.Error()+":>"+s)
+        return errors.New(e.Error() + ":>" + s)
     } else {
         return nil
     }
@@ -47,7 +47,7 @@ func (self *Session) Create(table *Table) error {
     }
     //log.Debugln("SQL:>>>", s)
     if _, e := self.db.Exec(s, args...); nil != e {
-        return errors.New(e.Error()+":>"+s)
+        return errors.New(e.Error() + ":>" + s)
     } else {
         return nil
     }
@@ -55,14 +55,14 @@ func (self *Session) Create(table *Table) error {
     //return e
 }
 
-func (self *Session) Exec(s string,args...interface{}) (sql.Result, error) {
-    return self.doExec(s, args...)
-    //if _, e := self.db.Exec(s); nil != e {
-    //    return e
-    //} else {
-    //    return nil
-    //}
-}
+//func (self *Session) Exec(s string,args...interface{}) (sql.Result, error) {
+//    return self.Exec(s, args...)
+//    //if _, e := self.db.Exec(s); nil != e {
+//    //    return e
+//    //} else {
+//    //    return nil
+//    //}
+//}
 
 func (self *Session) Close() {
     if self.tx != nil {
@@ -70,7 +70,7 @@ func (self *Session) Close() {
     }
 }
 
-func (self *Session) Query(table *Table, columns ...interface{}) QuerySet {
+func (self *Session) Table(table *Table, columns ...interface{}) QuerySet {
     qs := QuerySet{session: self, offset: -1, limit: -1}
     qs.table = table
     if len(columns) > 0 {
@@ -80,7 +80,7 @@ func (self *Session) Query(table *Table, columns ...interface{}) QuerySet {
             } else if qcn, ok := c.(string); ok {
                 if col, ok := qs.table.GetColumn(qcn); !ok {
                     //panic("Invalid column name:" + qcn)
-                    qs.queries = append(qs.queries, QueryColumn{FieldName: qcn, Alias: fmt.Sprintf("aa%d",i)})
+                    qs.queries = append(qs.queries, QueryColumn{FieldName: qcn, Alias: fmt.Sprintf("aa%d", i)})
                 } else {
                     qs.queries = append(qs.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
                 }
@@ -133,57 +133,57 @@ func log_timing(t1 time.Time, msg string, params ...interface{}) {
     fmt.Println(t1, t2, t2.Sub(t1), msg, params)
 }
 
-func (self *Session) doExec(query string, args ...interface{}) (sql.Result, error) {
+func (self *Session) Exec(query string, args ...interface{}) (sql.Result, error) {
     if self.verbose {
         t1 := time.Now()
-        defer log_timing(t1,"Session.doExec:", query)
+        defer log_timing(t1, "Session.Exec:", query)
     }
     if self.tx != nil {
         if self.verbose {
-            //log.Debugln("doExec in Tx: ", query, args)
+            //log.Debugln("Exec in Tx: ", query, args)
         }
         return self.tx.Exec(query, args...)
     } else {
         if self.verbose {
-            //log.Debugln("doExec in DB: ", query, args)
+            //log.Debugln("Exec in DB: ", query, args)
         }
         return self.db.Exec(query, args...)
     }
     return nil, nil
 }
 
-func (self *Session) doQuery(query string, args ...interface{}) (*sql.Rows, error) {
+func (self *Session) Query(query string, args ...interface{}) (*sql.Rows, error) {
     if self.verbose {
         t1 := time.Now()
-        defer log_timing(t1,"Session.doQuery:", query)
+        defer log_timing(t1, "Session.Query:", query)
     }
     if self.tx != nil {
         if self.verbose {
-            //log.Debugln("doQuery in Tx: ", query, args)
+            //log.Debugln("Query in Tx: ", query, args)
         }
         return self.tx.Query(query, args...)
     } else {
         if self.verbose {
-            //log.Debugln("doQuery in DB: ", query, args)
+            //log.Debugln("Query in DB: ", query, args)
         }
         return self.db.Query(query, args...)
     }
     return nil, nil
 }
 
-func (self *Session) doQueryRow(query string, args ...interface{}) *sql.Row {
+func (self *Session) QueryRow(query string, args ...interface{}) *sql.Row {
     if self.verbose {
         t1 := time.Now()
-        defer log_timing(t1,"Session.doQueryRaw:", query)
+        defer log_timing(t1, "Session.doQueryRaw:", query)
     }
     if self.tx != nil {
         if self.verbose {
-            //log.Debugln("doQueryRow in Tx: ", query, args)
+            //log.Debugln("QueryRow in Tx: ", query, args)
         }
         return self.tx.QueryRow(query, args...)
     } else {
         if self.verbose {
-            //log.Debugln("doQueryRow in Db: ", query, args)
+            //log.Debugln("QueryRow in Db: ", query, args)
         }
         return self.db.QueryRow(query, args...)
     }

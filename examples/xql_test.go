@@ -162,14 +162,14 @@ func TestQuerySet_Insert(t *testing.T) {
     c2.Character.Height = 192
     c2.Character.Weight = 88
     var id int
-    if e := session.Query(SchoolTable).InsertWithInsertedId(&c, "id", &id); nil != e {
+    if e := session.Table(SchoolTable).InsertWithInsertedId(&c, "id", &id); nil != e {
         t.Fatal("Insert failed:> ", e)
     } else {
         t.Log("Inserted School: ", id, c)
     }
     c1.SchoolId = id
     c2.SchoolId = id
-    if n, e := session.Query(StudentTable).Insert(&c1, &c2); nil != e {
+    if n, e := session.Table(StudentTable).Insert(&c1, &c2); nil != e {
         t.Fatal("Insert failed:> ", e)
     } else {
         t.Log("Inserted Student: ", n, c1, c2)
@@ -180,7 +180,7 @@ func TestQuerySet_Insert(t *testing.T) {
 func TestQuerySet_One(t *testing.T) {
     t1 := time.Now()
     crew := Student{}
-    if e := session.Query(StudentTable).One().Scan(&crew); nil != e {
+    if e := session.Table(StudentTable).One().Scan(&crew); nil != e {
         t.Fatal("Qery One failed:>", e)
     } else {
         t.Log("Queried One:>", crew)
@@ -190,8 +190,8 @@ func TestQuerySet_One(t *testing.T) {
 
 func TestQuerySet_Scan(t *testing.T) {
     t1 := time.Now()
-    if r, e := session.Query(StudentTable).Filter(map[string]interface{}{"region": "US"}).All(); nil != e {
-        t.Fatal("Query all failed:>", e)
+    if r, e := session.Table(StudentTable).Filter(map[string]interface{}{"region": "US"}).All(); nil != e {
+        t.Fatal("Table all failed:>", e)
     } else {
         defer r.Close()
         for r.Next() {
@@ -208,7 +208,7 @@ func TestQuerySet_Scan(t *testing.T) {
 
 func TestQuerySet_Update(t *testing.T) {
     t1 := time.Now()
-    if n, e := session.Query(StudentTable).Update(map[string]interface{}{"age": 30}); nil != e {
+    if n, e := session.Table(StudentTable).Update(map[string]interface{}{"age": 30}); nil != e {
         t.Fatal("Update failed:>", e)
     } else {
         t.Log("Updated rows:>", n)
@@ -218,7 +218,7 @@ func TestQuerySet_Update(t *testing.T) {
 
 func TestQuerySet_Delete(t *testing.T) {
     t1 := time.Now()
-    if n, e := session.Query(StudentTable).Filter(map[string]interface{}{"full_name": "Tom Cruse"}).Delete(); nil != e {
+    if n, e := session.Table(StudentTable).Filter(map[string]interface{}{"full_name": "Tom Cruse"}).Delete(); nil != e {
         t.Fatal("Delete failed:>", e)
     } else {
         t.Log("Deleted rows:>", n)
