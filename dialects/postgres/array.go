@@ -23,6 +23,7 @@ func (h StringArray) Declare(props xql.PropertySet) string {
 	size, _ := props.GetInt("size", 32)
 	return fmt.Sprintf("varchar(%d)[]", size)
 }
+
 //
 //func (a StringArray) Elem2Strings() []string {
 //	var ss []string
@@ -39,13 +40,20 @@ func (h StringArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p *StringArray) Scan(src interface{}) error {
-	return pq.Array(p).Scan(src)
+func (p StringArray) Scan(src interface{}) error {
+	var ps []string
+	if e := pq.Array(ps).Scan(src); nil != e {
+		return e
+	} else {
+		p = StringArray(ps)
+		return nil
+	}
+	//return pq.Array(p).Scan(src)
 	//return Array_Scan(src, p)
 }
 
 func (p StringArray) Value() (driver.Value, error) {
-	return pq.Array(p).Value()
+	return pq.Array([]string(p)).Value()
 	//return Array_Value(&p)
 }
 
