@@ -42,7 +42,7 @@ func (h StringArray) Declare(props xql.PropertySet) string {
 
 func (p *StringArray) Scan(src interface{}) error {
 	var ps []string
-	if e := pq.Array(ps).Scan(src); nil != e {
+	if e := pq.Array(&ps).Scan(src); nil != e {
 		return e
 	} else {
 		pp := StringArray(ps)
@@ -86,7 +86,7 @@ func (h IntegerArray) Declare(props xql.PropertySet) string {
 
 func (p *IntegerArray) Scan(src interface{}) error {
 	var ps []int
-	if e := pq.Array(ps).Scan(src); nil != e {
+	if e := pq.Array(&ps).Scan(src); nil != e {
 		return e
 	} else {
 		//p = IntegerArray(ps)
@@ -130,7 +130,7 @@ func (h SmallIntegerArray) Declare(props xql.PropertySet) string {
 
 func (p *SmallIntegerArray) Scan(src interface{}) error {
 	var ps []int16
-	if e := pq.Array(ps).Scan(src); nil != e {
+	if e := pq.Array(&ps).Scan(src); nil != e {
 		return e
 	} else {
 		//p = SmallIntegerArray(ps)
@@ -174,7 +174,7 @@ func (h BigIntegerArray) Declare(props xql.PropertySet) string {
 
 func (p *BigIntegerArray) Scan(src interface{}) error {
 	var ps []int64
-	if e := pq.Array(ps).Scan(src); nil != e {
+	if e := pq.Array(&ps).Scan(src); nil != e {
 		return e
 	} else {
 		//p = BigIntegerArray(ps)
@@ -218,7 +218,7 @@ func (h RealArray) Declare(props xql.PropertySet) string {
 
 func (p *RealArray) Scan(src interface{}) error {
 	var ps []float32
-	if e := pq.Array(ps).Scan(src); nil != e {
+	if e := pq.Array(&ps).Scan(src); nil != e {
 		return e
 	} else {
 		//p = RealArray(ps)
@@ -262,7 +262,7 @@ func (h DoubleArray) Declare(props xql.PropertySet) string {
 
 func (p *DoubleArray) Scan(src interface{}) error {
 	var ps []float64
-	if e := pq.Array(ps).Scan(src); nil != e {
+	if e := pq.Array(&ps).Scan(src); nil != e {
 		return e
 	} else {
 		//p = DoubleArray(ps)
@@ -306,7 +306,7 @@ func (h BoolArray) Declare(props xql.PropertySet) string {
 
 func (p *BoolArray) Scan(src interface{}) error {
 	var ps []bool
-	if e := pq.Array(ps).Scan(src); nil != e {
+	if e := pq.Array(&ps).Scan(src); nil != e {
 		return e
 	} else {
 		//p = BoolArray(ps)
