@@ -40,12 +40,13 @@ func (h StringArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p StringArray) Scan(src interface{}) error {
+func (p *StringArray) Scan(src interface{}) error {
 	var ps []string
 	if e := pq.Array(ps).Scan(src); nil != e {
 		return e
 	} else {
-		p = StringArray(ps)
+		pp := StringArray(ps)
+		p = &pp
 		return nil
 	}
 	//return pq.Array(p).Scan(src)
@@ -83,12 +84,14 @@ func (h IntegerArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p IntegerArray) Scan(src interface{}) error {
+func (p *IntegerArray) Scan(src interface{}) error {
 	var ps []int
 	if e := pq.Array(ps).Scan(src); nil != e {
 		return e
 	} else {
-		p = IntegerArray(ps)
+		//p = IntegerArray(ps)
+		pp := IntegerArray(ps)
+		p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -125,12 +128,14 @@ func (h SmallIntegerArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p SmallIntegerArray) Scan(src interface{}) error {
+func (p *SmallIntegerArray) Scan(src interface{}) error {
 	var ps []int16
 	if e := pq.Array(ps).Scan(src); nil != e {
 		return e
 	} else {
-		p = SmallIntegerArray(ps)
+		//p = SmallIntegerArray(ps)
+		pp := SmallIntegerArray(ps)
+		p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -167,12 +172,14 @@ func (h BigIntegerArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p BigIntegerArray) Scan(src interface{}) error {
+func (p *BigIntegerArray) Scan(src interface{}) error {
 	var ps []int64
 	if e := pq.Array(ps).Scan(src); nil != e {
 		return e
 	} else {
-		p = BigIntegerArray(ps)
+		//p = BigIntegerArray(ps)
+		pp := BigIntegerArray(ps)
+		p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -209,12 +216,14 @@ func (h RealArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p RealArray) Scan(src interface{}) error {
+func (p *RealArray) Scan(src interface{}) error {
 	var ps []float32
 	if e := pq.Array(ps).Scan(src); nil != e {
 		return e
 	} else {
-		p = RealArray(ps)
+		//p = RealArray(ps)
+		pp := RealArray(ps)
+		p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -251,12 +260,14 @@ func (h DoubleArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p DoubleArray) Scan(src interface{}) error {
+func (p *DoubleArray) Scan(src interface{}) error {
 	var ps []float64
 	if e := pq.Array(ps).Scan(src); nil != e {
 		return e
 	} else {
-		p = DoubleArray(ps)
+		//p = DoubleArray(ps)
+		pp := DoubleArray(ps)
+		p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -293,12 +304,14 @@ func (h BoolArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p BoolArray) Scan(src interface{}) error {
+func (p *BoolArray) Scan(src interface{}) error {
 	var ps []bool
 	if e := pq.Array(ps).Scan(src); nil != e {
 		return e
 	} else {
-		p = BoolArray(ps)
+		//p = BoolArray(ps)
+		pp := BoolArray(ps)
+		p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
