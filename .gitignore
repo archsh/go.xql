@@ -2,7 +2,8 @@
 *.o
 *.a
 *.so
-
+go.sum
+.idea
 # Folders
 _obj
 _test
