@@ -83,13 +83,19 @@ func (h IntegerArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p *IntegerArray) Scan(src interface{}) error {
-	return pq.Array(p).Scan(src)
+func (p IntegerArray) Scan(src interface{}) error {
+	var ps []int
+	if e := pq.Array(ps).Scan(src); nil != e {
+		return e
+	} else {
+		p = IntegerArray(ps)
+		return nil
+	}
 	//return Array_Scan(src, p)
 }
 
 func (p IntegerArray) Value() (driver.Value, error) {
-	return pq.Array(p).Value()
+	return pq.Array([]int(p)).Value()
 	//return Array_Value(&p)
 }
 
@@ -119,13 +125,19 @@ func (h SmallIntegerArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p *SmallIntegerArray) Scan(src interface{}) error {
-	return pq.Array(p).Scan(src)
+func (p SmallIntegerArray) Scan(src interface{}) error {
+	var ps []int16
+	if e := pq.Array(ps).Scan(src); nil != e {
+		return e
+	} else {
+		p = SmallIntegerArray(ps)
+		return nil
+	}
 	//return Array_Scan(src, p)
 }
 
 func (p SmallIntegerArray) Value() (driver.Value, error) {
-	return pq.Array(p).Value()
+	return pq.Array([]int16(p)).Value()
 	//return Array_Value(&p)
 }
 
@@ -155,13 +167,19 @@ func (h BigIntegerArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p *BigIntegerArray) Scan(src interface{}) error {
-	return pq.Array(p).Scan(src)
+func (p BigIntegerArray) Scan(src interface{}) error {
+	var ps []int64
+	if e := pq.Array(ps).Scan(src); nil != e {
+		return e
+	} else {
+		p = BigIntegerArray(ps)
+		return nil
+	}
 	//return Array_Scan(src, p)
 }
 
 func (p BigIntegerArray) Value() (driver.Value, error) {
-	return pq.Array(p).Value()
+	return pq.Array([]int64(p)).Value()
 	//return Array_Value(&p)
 }
 
@@ -191,13 +209,19 @@ func (h RealArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p *RealArray) Scan(src interface{}) error {
-	return pq.Array(p).Scan(src)
+func (p RealArray) Scan(src interface{}) error {
+	var ps []float32
+	if e := pq.Array(ps).Scan(src); nil != e {
+		return e
+	} else {
+		p = RealArray(ps)
+		return nil
+	}
 	//return Array_Scan(src, p)
 }
 
 func (p RealArray) Value() (driver.Value, error) {
-	return pq.Array(p).Value()
+	return pq.Array([]float32(p)).Value()
 	//return Array_Value(&p)
 }
 
@@ -227,13 +251,19 @@ func (h DoubleArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p *DoubleArray) Scan(src interface{}) error {
-	return pq.Array(p).Scan(src)
+func (p DoubleArray) Scan(src interface{}) error {
+	var ps []float64
+	if e := pq.Array(ps).Scan(src); nil != e {
+		return e
+	} else {
+		p = DoubleArray(ps)
+		return nil
+	}
 	//return Array_Scan(src, p)
 }
 
 func (p DoubleArray) Value() (driver.Value, error) {
-	return pq.Array(p).Value()
+	return pq.Array([]float64(p)).Value()
 	//return Array_Value(&p)
 }
 
@@ -263,13 +293,19 @@ func (h BoolArray) Declare(props xql.PropertySet) string {
 //	return nil
 //}
 
-func (p *BoolArray) Scan(src interface{}) error {
-	return pq.Array(p).Scan(src)
+func (p BoolArray) Scan(src interface{}) error {
+	var ps []bool
+	if e := pq.Array(ps).Scan(src); nil != e {
+		return e
+	} else {
+		p = BoolArray(ps)
+		return nil
+	}
 	//return Array_Scan(src, p)
 }
 
 func (p BoolArray) Value() (driver.Value, error) {
-	return pq.Array(p).Value()
+	return pq.Array([]bool(p)).Value()
 	//return Array_Value(&p)
 }
 
