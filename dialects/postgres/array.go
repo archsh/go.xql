@@ -45,8 +45,10 @@ func (p *StringArray) Scan(src interface{}) error {
 	if e := pq.Array(&ps).Scan(src); nil != e {
 		return e
 	} else {
-		pp := StringArray(ps)
-		p = &pp
+		//fmt.Println(">>>", ps)
+		//fmt.Println("<<<", src)
+		*p = StringArray(ps)
+		//p = &pp
 		return nil
 	}
 	//return pq.Array(p).Scan(src)
@@ -90,8 +92,10 @@ func (p *IntegerArray) Scan(src interface{}) error {
 		return e
 	} else {
 		//p = IntegerArray(ps)
-		pp := IntegerArray(ps)
-		p = &pp
+		//fmt.Println(">>>", ps)
+		//fmt.Println("<<<", src)
+		*p = IntegerArray(ps)
+		//p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -134,8 +138,10 @@ func (p *SmallIntegerArray) Scan(src interface{}) error {
 		return e
 	} else {
 		//p = SmallIntegerArray(ps)
-		pp := SmallIntegerArray(ps)
-		p = &pp
+		//fmt.Println(">>>", ps)
+		//fmt.Println("<<<", src)
+		*p = SmallIntegerArray(ps)
+		//p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -178,8 +184,10 @@ func (p *BigIntegerArray) Scan(src interface{}) error {
 		return e
 	} else {
 		//p = BigIntegerArray(ps)
-		pp := BigIntegerArray(ps)
-		p = &pp
+		//fmt.Println(">>>", ps)
+		//fmt.Println("<<<", src)
+		*p = BigIntegerArray(ps)
+		//p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -222,8 +230,10 @@ func (p *RealArray) Scan(src interface{}) error {
 		return e
 	} else {
 		//p = RealArray(ps)
-		pp := RealArray(ps)
-		p = &pp
+		//fmt.Println(">>>", ps)
+		//fmt.Println("<<<", src)
+		*p = RealArray(ps)
+		//p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -237,7 +247,7 @@ func (p RealArray) Value() (driver.Value, error) {
 type DoubleArray []float64
 
 func (h DoubleArray) Declare(props xql.PropertySet) string {
-	return "double[]"
+	return "real[]"
 }
 
 //func (a DoubleArray) Elem2Strings() []string {
@@ -266,8 +276,10 @@ func (p *DoubleArray) Scan(src interface{}) error {
 		return e
 	} else {
 		//p = DoubleArray(ps)
-		pp := DoubleArray(ps)
-		p = &pp
+		//fmt.Println(">>>", ps)
+		//fmt.Println("<<<", src)
+		*p = DoubleArray(ps)
+		//p = &pp
 		return nil
 	}
 	//return Array_Scan(src, p)
@@ -310,8 +322,9 @@ func (p *BoolArray) Scan(src interface{}) error {
 		return e
 	} else {
 		//p = BoolArray(ps)
-		pp := BoolArray(ps)
-		p = &pp
+		//fmt.Println(">>>", ps)
+		//fmt.Println("<<<", src)
+		*p = BoolArray(ps)
 		return nil
 	}
 	//return Array_Scan(src, p)
