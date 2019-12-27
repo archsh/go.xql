@@ -19,7 +19,7 @@ func (self *Session) getDialect() IDialect {
     if nil != self.dialect {
         return self.dialect
     }
-    if s, ok := _builtin_dialects[self.driverName]; ok {
+    if s, ok := builtinDialects[self.driverName]; ok {
         self.dialect = s
         return s
     } else {
