@@ -229,11 +229,28 @@ func TestQuerySet_Scan(t *testing.T) {
 
 func TestQuerySet_Update(t *testing.T) {
 	t1 := time.Now()
-	if n, e := session.Table(StudentTable).Update(map[string]interface{}{"age": 30}); nil != e {
-		t.Fatal("Update failed:>", e)
+	var ids []int
+	if rows, e := session.Table(StudentTable, "id").LockFor("UPDATE").All(); nil != e {
+		t.Fatal("Query with ock failed:>", e)
 	} else {
-		t.Log("Updated rows:>", n)
+		defer rows.Close()
+		for rows.Next() {
+			var id int
+			if e := rows.Scan(&id); nil != e {
+				t.Fatal("Scan failed:>", e)
+			} else {
+				ids = append(ids, id)
+			}
+		}
 	}
+	for _, id := range ids {
+		if n, e := session.Table(StudentTable).Where("id", id).Update(map[string]interface{}{"age": 30}); nil != e {
+			t.Fatal("Update failed:>", e)
+		} else {
+			t.Log("Updated rows:>", n)
+		}
+	}
+
 	t.Log("Time spent:> ", time.Now().Sub(t1))
 }
 

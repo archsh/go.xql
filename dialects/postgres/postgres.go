@@ -229,7 +229,7 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
 
 // Select
 // Implement the IDialect interface for select values.
-func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, extra xql.QueryExtra, offset int64, limit int64) (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, lockFor string, offset int64, limit int64) (s string, args []interface{}, err error) {
 	var colnames []string
 	for _, x := range cols {
 		colnames = append(colnames, x.String())
@@ -288,6 +288,9 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
 
 	if limit >= 0 {
 		s = fmt.Sprintf(`%s LIMIT %d`, s, limit)
+	}
+	if lockFor != "" {
+		s += " FOR " + lockFor
 	}
 	return
 }
@@ -404,7 +407,7 @@ func makeSetStr(uc xql.UpdateColumn, i int, args []interface{}) ([]interface{}, 
 
 // Update
 // Implement the IDialect interface to generate UPDATE statement
-func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, extra xql.QueryExtra, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
 	s = "UPDATE "
 	s += t.TableName()
 	if len(cols) < 1 {
@@ -464,7 +467,7 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, extra 
 
 // Delete
 // Implement the IDialect interface to generate DELETE statement
-func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter, extra xql.QueryExtra) (s string, args []interface{}, err error) {
+func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s string, args []interface{}, err error) {
 	s = "DELETE FROM "
 	s += t.TableName()
 	var n int

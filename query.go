@@ -35,7 +35,7 @@ type QuerySet struct {
 	queries []QueryColumn
 	filters []QueryFilter
 	orders  []QueryOrder
-	extra   QueryExtra
+	lockFor string
 	offset  int64
 	limit   int64
 }
@@ -170,11 +170,8 @@ func (qs QuerySet) Or(field string, val interface{}, ops ...string) QuerySet {
 	return qs
 }
 
-func (qs QuerySet) Extra(k string, v interface{}) QuerySet {
-	if qs.extra == nil {
-		qs.extra = make(QueryExtra)
-	}
-	qs.extra[k] = v
+func (qs QuerySet) LockFor(s string) QuerySet {
+	qs.lockFor = s
 	return qs
 }
 
@@ -241,7 +238,7 @@ func (qs QuerySet) Count(cols ...string) (int64, error) {
 	}
 	s, args, err := qs.session.getDialect().Select(qs.table,
 		[]QueryColumn{{Function: "COUNT", FieldName: fieldname}},
-		qs.filters, nil, qs.extra, -1, -1)
+		qs.filters, nil, qs.lockFor, -1, -1)
 	if nil != err {
 		return 0, err
 	}
@@ -260,7 +257,7 @@ func (qs QuerySet) All() (*XRows, error) {
 		}
 	}
 	s, args, err := qs.session.getDialect().Select(qs.table, qs.queries,
-		qs.filters, qs.orders, qs.extra, qs.offset, qs.limit)
+		qs.filters, qs.orders, qs.lockFor, qs.offset, qs.limit)
 	if nil != err {
 		return nil, err
 	}
@@ -279,7 +276,7 @@ func (qs QuerySet) One() *XRow {
 		}
 	}
 	s, args, err := qs.session.getDialect().Select(qs.table, qs.queries,
-		qs.filters, qs.orders, qs.extra, qs.offset, 1)
+		qs.filters, qs.orders, qs.lockFor, qs.offset, 1)
 	if nil != err {
 		return nil
 	}
@@ -308,7 +305,7 @@ func (qs QuerySet) Get(pks ...interface{}) *XRow {
 		qs.filters = append(qs.filters, filter)
 	}
 	s, args, err := qs.session.getDialect().Select(qs.table, qs.queries,
-		qs.filters, qs.orders, qs.extra, qs.offset, 1)
+		qs.filters, qs.orders, qs.lockFor, qs.offset, 1)
 	if nil != err {
 		return nil
 	}
@@ -351,7 +348,7 @@ func (qs QuerySet) Update(vals interface{}) (int64, error) {
 			}
 		}
 	}
-	s, args, err := qs.session.getDialect().Update(qs.table, qs.filters, qs.extra, cols...)
+	s, args, err := qs.session.getDialect().Update(qs.table, qs.filters, cols...)
 	if nil != err {
 		return 0, err
 	}
@@ -368,7 +365,7 @@ func (qs QuerySet) Update(vals interface{}) (int64, error) {
 }
 
 func (qs QuerySet) Delete() (int64, error) {
-	s, args, err := qs.session.getDialect().Delete(qs.table, qs.filters, qs.extra)
+	s, args, err := qs.session.getDialect().Delete(qs.table, qs.filters)
 	if nil != err {
 		return 0, err
 	}
