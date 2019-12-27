@@ -1,27 +1,27 @@
 package xql
 
 import (
+    "errors"
     "reflect"
     "strings"
-    "errors"
     "time"
 )
 
 type Column struct {
     PropertySet
-    FieldName  string
-    ElemName   string
-    Jtag       string
-    Type       reflect.Type
-    TypeDefine string
-    Indexed    bool // Indexed or not, on field
-    Nullable   bool // Nullable constraint on field
-    Unique     bool // Unique constraint on field
-    PrimaryKey bool //Primary Key constraint on field
-    Default    interface{}
+    FieldName   string
+    ElemName    string
+    Jtag        string
+    Type        reflect.Type
+    TypeDefine  string
+    Indexed     bool // Indexed or not, on field
+    Nullable    bool // Nullable constraint on field
+    Unique      bool // Unique constraint on field
+    PrimaryKey  bool //Primary Key constraint on field
+    Default     interface{}
     Constraints []*Constraint
     Indexes     []*Index
-    table      interface{}
+    table       interface{}
 }
 
 type Declarable interface {
@@ -40,9 +40,9 @@ func DefaultDeclare(f reflect.StructField, props PropertySet) (string, error) {
             return Text("").Declare(props), nil
         case "int", "integer":
             return Integer(0).Declare(props), nil
-        case "smallint","smallinteger":
+        case "smallint", "smallinteger":
             return SmallInteger(0).Declare(props), nil
-        case "bigint","biginteger":
+        case "bigint", "biginteger":
             return BigInteger(0).Declare(props), nil
         case "serial":
             return Serial(0).Declare(props), nil
@@ -60,10 +60,12 @@ func DefaultDeclare(f reflect.StructField, props PropertySet) (string, error) {
             return Time(time.Time{}).Declare(props), nil
         case "datetime", "timestamp":
             return TimeStamp(time.Time{}).Declare(props), nil
-        case "decimal","numeric":
+        case "decimal", "numeric":
             return Decimal("").Declare(props), nil
         case "uuid":
             return UUID("").Declare(props), nil
+        default:
+            return t, nil
         }
     }
     switch f.Type.Kind() {
@@ -101,15 +103,15 @@ func makeColumn(t *Table, f reflect.StructField, v reflect.Value) *Column {
         panic(e)
     }
     field := &Column{
-        FieldName: Camel2Underscore(f.Name),
-        ElemName:f.Name,
-        Type: f.Type,
+        FieldName:   Camel2Underscore(f.Name),
+        ElemName:    f.Name,
+        Type:        f.Type,
         PropertySet: props,
     }
     jtag := f.Tag.Get("json")
     if jtag != "" {
-        field.Jtag = jtag
-    }else{
+        field.Jtag = strings.Split(jtag, ",")[0]
+    } else {
         field.Jtag = f.Name
     }
     if fn, ok := props.PopString("name"); ok {
@@ -141,7 +143,7 @@ func makeColumn(t *Table, f reflect.StructField, v reflect.Value) *Column {
     if fk, ok := props.GetString("foreignkey", ); ok && fk != "" {
         field.Constraints = append(field.Constraints,
             makeConstraints(CONSTRAINT_FOREIGNKEY, field)...)
-    }else if fk, ok := props.GetString("fk", ); ok && fk != "" {
+    } else if fk, ok := props.GetString("fk", ); ok && fk != "" {
         field.Constraints = append(field.Constraints,
             makeConstraints(CONSTRAINT_FOREIGNKEY, field)...)
     }
@@ -159,10 +161,10 @@ func makeColumn(t *Table, f reflect.StructField, v reflect.Value) *Column {
     //field.PropertySet = props
     if p, ok := v.Interface().(Declarable); ok {
         field.TypeDefine = p.Declare(props)
-    }else{
+    } else {
         if d, e := DefaultDeclare(f, props); nil == e {
             field.TypeDefine = d
-        }else{
+        } else {
             panic(e)
         }
     }
@@ -185,7 +187,10 @@ func makeColumns(t *Table, p interface{}, recursive bool, skips ...string) []*Co
             continue
         }
         x_tags := strings.Split(f.Tag.Get("xql"), ",")
-        if f.Anonymous && !recursive {
+        if x_tags[0] == "-" {
+            continue
+        }
+        if f.Anonymous {
             if x_tags[0] != "-" {
                 sks := getSkips(x_tags)
                 for _, c := range makeColumns(t, ev.Elem().Field(i).Addr().Interface(), true, sks...) {
@@ -201,5 +206,3 @@ func makeColumns(t *Table, p interface{}, recursive bool, skips ...string) []*Co
     }
     return fields
 }
-
-

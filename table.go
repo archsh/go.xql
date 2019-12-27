@@ -28,40 +28,58 @@ type TableIgnored interface {
 
 // TableConstrainted
 // Which allow struct to define a method Constraints() to cunstomize table constraints
+// type, fields, statement
 type TableConstrainted interface {
-    Constraints() []*Constraint
+    Constraints() [][3]string
 }
 
 // TableIndexed
 // Which allow struct to define a method Indexes() to define table indexes
+// type, fields, statement
 type TableIndexed interface {
-    Indexes() []*Index
+    Indexes() [][2]string
 }
 
 // TablePreInsert
 // Which entity implemented will be called when xql create a new struct instance.
 type TablePreInsert interface {
-    PreInsert(*Table, *Session)
+    PreInsert(*Table, *Session) error
 }
 
-type TabelPreUpdate interface {
-    PreUpdate(*Table, *Session)
+type TablePreUpdate interface {
+    PreUpdate(*Table, *Session) error
 }
 
 type TablePreDelete interface {
-    PreDelete(*Table, *Session)
+    PreDelete(*Table, *Session) error
 }
 
 type TablePostInsert interface {
-    PostInsert(*Table, *Session)
+    PostInsert(*Table, *Session) error
 }
 
 type TablePostUpdate interface {
-    PostUpdate(*Table, *Session)
+    PostUpdate(*Table, *Session) error
 }
 
 type TablePostDelete interface {
-    PostDelete(*Table, *Session)
+    PostDelete(*Table, *Session) error
+}
+
+type TableCreatable interface {
+    Creatable() bool
+}
+
+type TableUpdatable interface {
+    Updatable() bool
+}
+
+type TableReadable interface {
+    Readable() bool
+}
+
+type TableDeletable interface {
+    Deletable() bool
 }
 
 func (t *Table) TableName() string {

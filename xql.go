@@ -2,6 +2,7 @@ package xql
 
 import (
     "database/sql"
+    //"fmt"
 )
 
 func MakeSession(db *sql.DB, driverName string, verbose ...bool) *Session {
@@ -23,24 +24,6 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
         entity:  entity,
     }
     t.columns = makeColumns(t, entity, false, skips...)
-    if len(schema) > 0 {
-        t.schema = schema[0]
-    }
-    for _, c := range t.columns {
-        if c.PrimaryKey {
-            t.primary_keys = append(t.primary_keys, c)
-        }
-    }
-
-    //t.constraints = makeConstraints(t.columns...)
-    //t.indexes = makeIndexes(t.columns...)
-    if tt, ok := entity.(TableConstrainted); ok {
-        t.constraints = append(t.constraints, tt.Constraints()...)
-    }
-    if tt, ok := entity.(TableIndexed); ok {
-        t.indexes = append(t.indexes, tt.Indexes()...)
-    }
-
     t.x_columns = make(map[string]*Column)
     t.j_columns = make(map[string]*Column)
     t.m_columns = make(map[string]*Column)
@@ -49,6 +32,35 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
         t.m_columns[f.ElemName] = f
         t.j_columns[f.Jtag] = f
     }
+    if len(schema) > 0 {
+        t.schema = schema[0]
+    }
+    //fmt.Println(">>> Table:", t.TableName())
+    //for _, c := range t.columns {
+    //    fmt.Println(">>> Column:", c.FieldName, c.ElemName, c.TypeDefine)
+    //}
+
+    //t.constraints = makeConstraints(t.columns...)
+    //t.indexes = makeIndexes(t.columns...)
+    if tt, ok := entity.(TableConstrainted); ok {
+        t.constraints = append(t.constraints, buildConstraints(t, tt.Constraints()...)...)
+    }
+    if tt, ok := entity.(TableIndexed); ok {
+        t.indexes = append(t.indexes, buildIndexes(t, tt.Indexes()...)...)
+    }
+
+    for _, c := range t.constraints {
+        if c.Type == CONSTRAINT_PRIMARYKEY {
+            t.primary_keys = append(t.primary_keys, c.Columns...)
+        }
+    }
+
+    for _, c := range t.columns {
+        if c.PrimaryKey {
+            t.primary_keys = append(t.primary_keys, c)
+        }
+    }
+
     return t
 }
 

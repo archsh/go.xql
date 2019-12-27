@@ -1,11 +1,13 @@
 package postgres
 
 import (
-    "github.com/archsh/go.xql"
-    "fmt"
-    "reflect"
-    "strings"
-    "errors"
+	"database/sql"
+	"errors"
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/archsh/go.xql"
 )
 
 type PostgresDialect struct {
@@ -66,340 +68,470 @@ CREATE INDEX ix_public_metas_vod_albums_idx
   ON metas_vod_albums
   USING btree
   (idx);
- */
+*/
 
- func makeInlineConstraint(c... *xql.Constraint) string {
-     constraints := []string{}
-     for _, x := range c {
-         switch x.Type {
-         case xql.CONSTRAINT_NOT_NULL:
-             constraints = append(constraints, "NOT NULL")
-         case xql.CONSTRAINT_UNIQUE:
-             constraints = append(constraints, "UNIQUE")
-         case xql.CONSTRAINT_CHECK:
-             constraints = append(constraints, fmt.Sprintf("CHECK (%s)", x.Statement))
-         //case xql.CONSTRAINT_EXCLUDE:
-             //constraints = append(constraints, "NOT NUL")
-         case xql.CONSTRAINT_FOREIGNKEY:
-             ondelete := ""
-             onupdate := ""
-             if x.OnDelete != "" {
-                 ondelete = "ON DELETE "+x.OnDelete
-             }
-             if x.OnUpdate != "" {
-                 onupdate = "ON UPDATE "+x.OnUpdate
-             }
-             xs := strings.Split(x.Statement, ".")
-             if len(xs) > 1 {
-                 tt := strings.Join(xs[:len(xs)-1],".")
-                 tc := xs[len(xs)-1]
-                 constraints = append(constraints, fmt.Sprintf("REFERENCES %s (%s) %s %s",tt, tc, onupdate, ondelete))
-             }else{
-                 constraints = append(constraints, fmt.Sprintf("REFERENCES %s %s %s",xs[0], onupdate, ondelete))
-             }
+func makeInlineConstraint(c ...*xql.Constraint) string {
+	constraints := []string{}
+	for _, x := range c {
+		switch x.Type {
+		case xql.CONSTRAINT_NOT_NULL:
+			constraints = append(constraints, "NOT NULL")
+		case xql.CONSTRAINT_UNIQUE:
+			constraints = append(constraints, "UNIQUE")
+		case xql.CONSTRAINT_CHECK:
+			constraints = append(constraints, fmt.Sprintf("CHECK (%s)", x.Statement))
+			//case xql.CONSTRAINT_EXCLUDE:
+			//constraints = append(constraints, "NOT NUL")
+		case xql.CONSTRAINT_FOREIGNKEY:
+			onDelete := ""
+			onUpdate := ""
+			if x.OnDelete != "" {
+				onDelete = "ON DELETE " + x.OnDelete
+			}
+			if x.OnUpdate != "" {
+				onUpdate = "ON UPDATE " + x.OnUpdate
+			}
+			xs := strings.Split(x.Statement, ".")
+			if len(xs) > 1 {
+				tt := strings.Join(xs[:len(xs)-1], ".")
+				tc := xs[len(xs)-1]
+				constraints = append(constraints, fmt.Sprintf("REFERENCES %s (%s) %s %s", tt, escapePGkw(tc), onUpdate, onDelete))
+			} else {
+				constraints = append(constraints, fmt.Sprintf("REFERENCES %s %s %s", xs[0], onUpdate, onDelete))
+			}
 
-         case xql.CONSTRAINT_PRIMARYKEY:
-             constraints = append(constraints, "PRIMARY KEY")
-         }
-     }
-     if len(constraints) < 1 {
-         return ""
-     }
-     return strings.Join(constraints, " ")
- }
+		case xql.CONSTRAINT_PRIMARYKEY:
+			constraints = append(constraints, "PRIMARY KEY")
+		}
+	}
+	if len(constraints) < 1 {
+		return ""
+	}
+	return strings.Join(constraints, " ")
+}
 
- func makeConstraints(t *xql.Table, idx int, c... *xql.Constraint) (ret []string) {
-     for _, x := range c {
-         fields := []string{}
-         for _,cc := range x.Columns {
-             fields = append(fields, cc.FieldName)
-         }
-         field_str := strings.Join(fields, ",")
-         switch x.Type {
-         //case xql.CONSTRAINT_NOT_NULL:
-         //    ret = append(ret, fmt.Sprintf("NOT NUL"))
-         case xql.CONSTRAINT_UNIQUE:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT UNIQUE (%s)", field_str))
-         case xql.CONSTRAINT_CHECK:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT CHECK (%s)", x.Statement))
-         case xql.CONSTRAINT_EXCLUDE:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT EXCLUDE USING %s", x.Statement))
-         case xql.CONSTRAINT_FOREIGNKEY:
-             ondelete := ""
-             onupdate := ""
-             if x.OnDelete != "" {
-                 ondelete = "ON DELETE "+x.OnDelete
-             }
-             if x.OnUpdate != "" {
-                 onupdate = "ON UPDATE "+x.OnUpdate
-             }
-             ret = append(ret,
-                 fmt.Sprintf("CONSTRAINT FOREIGN KEY (%s) REFERENCES %s %s %s",
-                     field_str, x.Statement, onupdate, ondelete))
-         case xql.CONSTRAINT_PRIMARYKEY:
-             ret = append(ret, fmt.Sprintf("CONSTRAINT PRIMARY KEY (%s)", field_str))
-         }
-     }
-     return
- }
+func makeConstraints(t *xql.Table, idx int, c ...*xql.Constraint) (ret []string) {
+	for _, x := range c {
+		fields := []string{}
+		for _, cc := range x.Columns {
+			fields = append(fields, cc.FieldName)
+		}
+		field_str := strings.Join(fields, ",")
+		name_str := fmt.Sprintf("%s_%s", t.BaseTableName(), strings.Join(fields, "_"))
+		switch x.Type {
+		//case xql.CONSTRAINT_NOT_NULL:
+		//    ret = append(ret, fmt.Sprintf("NOT NUL"))
+		case xql.CONSTRAINT_UNIQUE:
+			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_unique UNIQUE (%s)", name_str, escapePGkw(field_str)))
+		case xql.CONSTRAINT_CHECK:
+			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_check CHECK (%s)", name_str, x.Statement))
+		case xql.CONSTRAINT_EXCLUDE:
+			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_exclude EXCLUDE USING %s", name_str, x.Statement))
+		case xql.CONSTRAINT_FOREIGNKEY:
+			ondelete := ""
+			onupdate := ""
+			if x.OnDelete != "" {
+				ondelete = "ON DELETE " + x.OnDelete
+			}
+			if x.OnUpdate != "" {
+				onupdate = "ON UPDATE " + x.OnUpdate
+			}
+			ret = append(ret,
+				fmt.Sprintf("CONSTRAINT %s_fkey FOREIGN KEY (%s) REFERENCES %s %s %s",
+					name_str, escapePGkw(field_str), x.Statement, onupdate, ondelete))
+		case xql.CONSTRAINT_PRIMARYKEY:
+			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", name_str, escapePGkw(field_str)))
+		}
+	}
+	return
+}
 
- func makeIndexes(t *xql.Table, idx int, i... *xql.Index) (ret []string) {
-     for _, ii := range i {
-         fs := []string{}
-         for _, c := range ii.Columns {
-             fs = append(fs, c.FieldName)
-         }
-         tp := ""
-         switch ii.Type {
-         case xql.INDEX_B_TREE:
-             tp = "USING btree"
-         case xql.INDEX_HASH:
-             tp = "USING hash"
-         case xql.INDEX_BRIN:
-             tp = "USING brin"
-         case xql.INDEX_GIST:
-             tp = "USING gist"
-         case xql.INDEX_SP_GIST:
-             tp = "USING sp-gist"
-         case xql.INDEX_GIN:
-             tp = "USING gin"
-         }
-         // CREATE INDEX test2_mm_idx ON test2 (major, minor);
-         s := fmt.Sprintf("CREATE INDEX %s ON %s %s (%s);",ii.Name , t.BaseTableName(), tp, strings.Join(fs, ","))
-         ret = append(ret, s)
-     }
-     return
- }
+func makeIndexes(t *xql.Table, idx int, i ...*xql.Index) (ret []string) {
+	for _, ii := range i {
+		fs := []string{}
+		for _, c := range ii.Columns {
+			fs = append(fs, c.FieldName)
+		}
+		tp := ""
+		switch ii.Type {
+		case xql.INDEX_B_TREE:
+			tp = "USING btree"
+		case xql.INDEX_HASH:
+			tp = "USING hash"
+		case xql.INDEX_BRIN:
+			tp = "USING brin"
+		case xql.INDEX_GIST:
+			tp = "USING gist"
+		case xql.INDEX_SP_GIST:
+			tp = "USING sp-gist"
+		case xql.INDEX_GIN:
+			tp = "USING gin"
+		}
+		// CREATE INDEX test2_mm_idx ON test2 (major, minor);
+		s := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s %s (\"%s\");", ii.Name, t.BaseTableName(), tp, strings.Join(fs, ","))
+		ret = append(ret, s)
+	}
+	return
+}
 
- // Drop
- // Implement the IDialect interface for generate DROP statement
+// Drop
+// Implement the IDialect interface for generate DROP statement
 func (pb PostgresDialect) Drop(t *xql.Table, force bool) (stm string, args []interface{}, err error) {
-    if nil == t {
-        err = errors.New("Table can not be nil !")
-        return
-    }
-    statements := []string{}
-    indexes := []*xql.Index{}
-    schema := ""
-    forced := ""
-    if force {
-        forced = " IF EXISTS "
-    }
-    for _, col := range t.GetColumns() {
-        indexes = append(indexes, col.Indexes...)
-    }
-    indexes = append(indexes, t.GetIndexes()...)
-    for _, idx := range indexes {
-        statements = append(statements, fmt.Sprintf("DROP INDEX %s%s%s;", forced, schema, idx.Name))
-    }
-    statements = append(statements, fmt.Sprintf("DROP TABLE %s%s;", forced, t.TableName()))
-    stm = strings.Join(statements, "\n")
-    return
+	if nil == t {
+		err = errors.New("table can not be nil")
+		return
+	}
+	statements := []string{}
+	indexes := []*xql.Index{}
+	schema := ""
+	forced := ""
+	if force {
+		forced = " IF EXISTS "
+	}
+	for _, col := range t.GetColumns() {
+		indexes = append(indexes, col.Indexes...)
+	}
+	indexes = append(indexes, t.GetIndexes()...)
+	for _, idx := range indexes {
+		statements = append(statements, fmt.Sprintf("DROP INDEX %s%s%s;", forced, schema, idx.Name))
+	}
+	statements = append(statements, fmt.Sprintf("DROP TABLE %s%s;", forced, t.TableName()))
+	stm = strings.Join(statements, "\n")
+	return
 }
 
 // Create
 // Implement the IDialect interface for creating table.
 func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
-    var createSQL string
-    var table_name string = t.TableName()
-    createSQL = "CREATE TABLE IF NOT EXISTS " + table_name + " ( "
-    var indexes []*xql.Index
-    var cols []string
-    for _, c := range t.GetColumns() {
-        col_str := fmt.Sprintf(`"%s" %s`, c.FieldName, c.TypeDefine)
-        if c.Default != nil {
-            col_str = fmt.Sprintf(`%s DEFAULT %s`, col_str, c.Default)
-        }
-        if len(c.Constraints) > 0 {
-            col_str = fmt.Sprintf(`%s %s`, col_str, makeInlineConstraint(c.Constraints...))
-        }
-        cols = append(cols, col_str)
-        indexes = append(indexes, c.Indexes...)
-    }
-    cols = append(cols, makeConstraints(t, 0, t.GetConstraints()...)...)
-    createSQL = createSQL + strings.Join(cols, ", ") + " );"
-    indexes = append(indexes, t.GetIndexes()...)
-    indexes_strings := makeIndexes(t, 0, indexes...)
-    s = strings.Join(append([]string{createSQL}, indexes_strings...), "\n")
-    return s, args, err
+	var createSQL string
+	var tableName string = t.TableName()
+	createSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " ( "
+	var indexes []*xql.Index
+	var cols []string
+	for _, c := range t.GetColumns() {
+		colStr := fmt.Sprintf(`%s %s`, escapePGkw(c.FieldName), c.TypeDefine)
+		if c.Default != nil {
+			colStr = fmt.Sprintf(`%s DEFAULT %s`, colStr, c.Default)
+		}
+		if len(c.Constraints) > 0 {
+			colStr = fmt.Sprintf(`%s %s`, colStr, makeInlineConstraint(c.Constraints...))
+		}
+		cols = append(cols, colStr)
+		indexes = append(indexes, c.Indexes...)
+	}
+	cols = append(cols, makeConstraints(t, 0, t.GetConstraints()...)...)
+	createSQL = createSQL + strings.Join(cols, ", ") + " );"
+	indexes = append(indexes, t.GetIndexes()...)
+	indexesStrings := makeIndexes(t, 0, indexes...)
+	s = strings.Join(append([]string{createSQL}, indexesStrings...), "\n")
+	return s, args, err
 }
 
 // Select
 // Implement the IDialect interface for select values.
 func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, offset int64, limit int64) (s string, args []interface{}, err error) {
-    var colnames []string
-    for _, x := range cols {
-        colnames = append(colnames, x.String())
-    }
-    s = fmt.Sprintf("SELECT %s FROM ", strings.Join(colnames, ","))
-    s += t.TableName()
-    var n int
-    for i, f := range filters {
-        var cause string
-        switch f.Condition {
-        case xql.CONDITION_AND:
-            cause = "AND"
-        case xql.CONDITION_OR:
-            cause = "OR"
-        }
-        if i == 0 {
-            cause = "WHERE"
-        }
-        if f.Operator == "" {
-            s = fmt.Sprintf(`%s %s %s`, s, cause, f.Field)
-        } else if f.Reversed {
-            n += 1
-            if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, f.Field)
-            } else {
-                s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, f.Field)
-            }
+	var colnames []string
+	for _, x := range cols {
+		colnames = append(colnames, x.String())
+	}
+	s = fmt.Sprintf("SELECT %s FROM ", strings.Join(colnames, ","))
+	s += t.TableName()
+	var n int
+	for i, f := range filters {
+		var cause string
+		switch f.Condition {
+		case xql.CONDITION_AND:
+			cause = "AND"
+		case xql.CONDITION_OR:
+			cause = "OR"
+		}
+		if i == 0 {
+			cause = "WHERE"
+		}
+		if f.Operator == "" {
+			s = fmt.Sprintf(`%s %s %s`, s, cause, escapePGkw(f.Field))
+		} else if f.Reversed {
+			n += 1
+			if f.Function != "" {
+				s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, escapePGkw(f.Field))
+			} else {
+				s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, escapePGkw(f.Field))
+			}
 
-            args = append(args, f.Value)
-        } else {
-            n += 1
-            if f.Function != "" {
-                s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, f.Field, f.Operator, f.Function, n)
-            } else {
-                s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, f.Field, f.Operator, n)
-            }
+			args = append(args, f.Value)
+		} else {
+			n += 1
+			if f.Function != "" {
+				s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, escapePGkw(f.Field), f.Operator, f.Function, n)
+			} else {
+				s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, escapePGkw(f.Field), f.Operator, n)
+			}
 
-            args = append(args, f.Value)
-        }
-    }
-    var s_orders []string
-    for _, o := range orders {
-        switch o.Type {
-        case xql.ORDER_ASC:
-            s_orders = append(s_orders, fmt.Sprintf(`%s ASC`, o.Field))
-        case xql.ORDER_DESC:
-            s_orders = append(s_orders, fmt.Sprintf(`%s DESC`, o.Field))
-        }
-    }
-    if len(s_orders) > 0 {
-        s = fmt.Sprintf(`%s ORDER BY %s`, s, strings.Join(s_orders, ","))
-    }
-    if offset >= 0 {
-        s = fmt.Sprintf(`%s OFFSET %d`, s, offset)
-    }
+			args = append(args, f.Value)
+		}
+	}
+	var s_orders []string
+	for _, o := range orders {
+		switch o.Type {
+		case xql.ORDER_ASC:
+			s_orders = append(s_orders, fmt.Sprintf(`%s ASC`, escapePGkw(o.Field)))
+		case xql.ORDER_DESC:
+			s_orders = append(s_orders, fmt.Sprintf(`%s DESC`, escapePGkw(o.Field)))
+		}
+	}
+	if len(s_orders) > 0 {
+		s = fmt.Sprintf(`%s ORDER BY %s`, s, strings.Join(s_orders, ","))
+	}
+	if offset >= 0 {
+		s = fmt.Sprintf(`%s OFFSET %d`, s, offset)
+	}
 
-    if limit >= 0 {
-        s = fmt.Sprintf(`%s LIMIT %d`, s, limit)
-    }
-    return
+	if limit >= 0 {
+		s = fmt.Sprintf(`%s LIMIT %d`, s, limit)
+	}
+	return
+}
+
+func isEmptyValue(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return v.Len() == 0
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.Interface, reflect.Ptr:
+		return v.IsNil()
+	}
+	return false
 }
 
 // Insert
 // Implement the IDialect interface to generate insert statement
 func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (s string, args []interface{}, err error) {
-    s = "INSERT INTO "
-    s += t.TableName()
-    var cols []string
-    var vals []string
-    r := reflect.ValueOf(obj)
-    if len(col) < 1 {
-        for _, x := range t.GetColumns() {
-            col = append(col, x.FieldName)
-        }
-    }
-    for i, n := range col {
-        column, ok := t.GetColumn(n)
-        if ! ok {
-            continue
-        }
-        if fv := reflect.Indirect(r).FieldByName(column.ElemName); ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()) == fv {
-            args = append(args, column.Default)
-        }else{
-            args = append(args, fv.Interface())
-        }
-        cols = append(cols, fmt.Sprintf(`"%s"`, column.FieldName))
-        vals = append(vals, fmt.Sprintf("$%d", i+1))
+	s = "INSERT INTO "
+	s += t.TableName()
+	var cols []string
+	var vals []string
+	r := reflect.ValueOf(obj)
+	if len(col) < 1 {
+		for _, x := range t.GetColumns() {
+			col = append(col, x.FieldName)
+		}
+	}
+	var i int
+	for _, n := range col {
+		column, ok := t.GetColumn(n)
+		if ! ok {
+			continue
+		}
+		fv := reflect.Indirect(r).FieldByName(column.ElemName)
+		fv.Kind()
+		//if fv.Interface() == reflect.Zero(fv.Type()).Interface() {
+		if ! fv.IsValid() || isEmptyValue(fv) {
+			//if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()).Interface() == fv.Interface() {
+			//    if column.PrimaryKey && column.Default == nil {
+			//        continue
+			//    }
+			//    args = append(args, column.Default)
+			continue
+		} else {
+			args = append(args, fv.Interface())
+		}
+		i += 1
+		cols = append(cols, fmt.Sprintf(`%s`, escapePGkw(column.FieldName)))
+		vals = append(vals, fmt.Sprintf("$%d", i))
 
-    }
-    s = fmt.Sprintf("%s (%s) VALUES(%s)", s, strings.Join(cols, ","), strings.Join(vals, ","))
-    return
+	}
+	s = fmt.Sprintf("%s (%s) VALUES(%s)", s, strings.Join(cols, ","), strings.Join(vals, ","))
+	return
+}
+
+// Insert
+// Implement the IDialect interface to generate insert statement
+func (pb PostgresDialect) InsertWithInsertedId(t *xql.Table, obj interface{}, insertedId string, col ...string) (s string, args []interface{}, err error) {
+	s = "INSERT INTO "
+	s += t.TableName()
+	var cols []string
+	var vals []string
+	r := reflect.ValueOf(obj)
+	if len(col) < 1 {
+		for _, x := range t.GetColumns() {
+			col = append(col, x.FieldName)
+		}
+	}
+	var i int
+	for _, n := range col {
+		column, ok := t.GetColumn(n)
+		if ! ok {
+			continue
+		}
+		fv := reflect.Indirect(r).FieldByName(column.ElemName)
+		fv.Kind()
+		//if fv.Interface() == reflect.Zero(fv.Type()).Interface() {
+		if ! fv.IsValid() || isEmptyValue(fv) {
+			//if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()).Interface() == fv.Interface() {
+			//    if column.PrimaryKey && column.Default == nil {
+			//        continue
+			//    }
+			//    args = append(args, column.Default)
+			continue
+		} else {
+			args = append(args, fv.Interface())
+		}
+		i += 1
+		cols = append(cols, fmt.Sprintf(`%s`, escapePGkw(column.FieldName)))
+		vals = append(vals, fmt.Sprintf("$%d", i))
+
+	}
+	s = fmt.Sprintf("%s (%s) VALUES(%s) RETURNING %s",
+		s, strings.Join(cols, ","), strings.Join(vals, ","), insertedId)
+	return
+}
+
+func makeSetStr(uc xql.UpdateColumn, i int, args []interface{}) ([]interface{}, string, int) {
+	if uc.Operator == "" {
+		return args, fmt.Sprintf(`%s`, uc.Field), i
+	} else {
+		args = append(args, uc.Value)
+		return args, fmt.Sprintf(`%s%s$%d`, escapePGkw(uc.Field), uc.Operator, i+1), i + 1
+	}
 }
 
 // Update
 // Implement the IDialect interface to generate UPDATE statement
 func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
-    s = "UPDATE "
-    s += t.TableName()
-    if len(cols) < 1 {
-        panic("Empty Update MappedColumns!!!")
-    }
-    var n int
-    for i, uc := range cols {
-        n += 1
-        if i == 0 {
-            //s = s + " SET "
-            s = fmt.Sprintf(`%s SET "%s"=$%d`, s, uc.Field, n)
-        } else {
-            s = fmt.Sprintf(`%s, "%s"=$%d`, s, uc.Field, n)
-        }
+	s = "UPDATE "
+	s += t.TableName()
+	if len(cols) < 1 {
+		panic("Empty Update MappedColumns!!!")
+	}
+	var n int
+	var ss string
+	for i, uc := range cols {
+		//n += 1
+		args, ss, n = makeSetStr(uc, n, args)
+		if i == 0 {
+			//s = s + " SET "
+			//s = fmt.Sprintf(`%s SET "%s"=$%d`, s, uc.Field, n)
+			s = fmt.Sprintf(`%s SET %s`, s, ss)
+		} else {
+			//s = fmt.Sprintf(`%s, "%s"=$%d`, s, uc.Field, n)
+			s = fmt.Sprintf(`%s, %s`, s, ss)
+		}
+	}
 
-        args = append(args, uc.Value)
-    }
+	//var n int
+	for i, f := range filters {
+		var cause string
+		switch f.Condition {
+		case xql.CONDITION_AND:
+			cause = "AND"
+		case xql.CONDITION_OR:
+			cause = "OR"
+		}
+		if i == 0 {
+			cause = "WHERE"
+		}
+		if f.Operator == "" {
+			s = fmt.Sprintf(`%s %s %s`, s, cause, f.Field)
+		} else if f.Reversed {
+			n += 1
+			if f.Function != "" {
+				s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, escapePGkw(f.Field))
+			} else {
+				s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, escapePGkw(f.Field))
+			}
 
-    for i, f := range filters {
-        var cause string
-        switch f.Condition {
-        case xql.CONDITION_AND:
-            cause = "AND"
-        case xql.CONDITION_OR:
-            cause = "OR"
-        }
-        if i == 0 {
-            cause = "WHERE"
-        }
-        if f.Operator == "" {
-            s = fmt.Sprintf("%s %s %s", s, cause, f.Field)
-        } else if f.Reversed {
-            n += 1
-            s = fmt.Sprintf("%s %s $%d %s %s", s, cause, n, f.Operator, f.Field)
-            args = append(args, f.Value)
-        } else {
-            n += 1
-            s = fmt.Sprintf("%s %s %s %s $%d", s, cause, f.Field, f.Operator, n)
-            args = append(args, f.Value)
-        }
-    }
-    return
+			args = append(args, f.Value)
+		} else {
+			n += 1
+			if f.Function != "" {
+				s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, escapePGkw(f.Field), f.Operator, f.Function, n)
+			} else {
+				s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, escapePGkw(f.Field), f.Operator, n)
+			}
+
+			args = append(args, f.Value)
+		}
+	}
+	return
 }
 
 // Delete
 // Implement the IDialect interface to generate DELETE statement
 func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s string, args []interface{}, err error) {
-    s = "DELETE FROM "
-    s += t.TableName()
-    var n int
-    for i, f := range filters {
-        var cause string
-        switch f.Condition {
-        case xql.CONDITION_AND:
-            cause = "AND"
-        case xql.CONDITION_OR:
-            cause = "OR"
-        }
-        if i == 0 {
-            cause = "WHERE"
-        }
-        if f.Operator == "" {
-            s = fmt.Sprintf("%s %s %s", s, cause, f.Field)
-        } else if f.Reversed {
-            n += 1
-            s = fmt.Sprintf("%s %s $%d %s %s", s, cause, n, f.Operator, f.Field)
-            args = append(args, f.Value)
-        } else {
-            n += 1
-            s = fmt.Sprintf("%s %s %s %s $%d", s, cause, f.Field, f.Operator, n)
-            args = append(args, f.Value)
-        }
-    }
-    return
+	s = "DELETE FROM "
+	s += t.TableName()
+	var n int
+	for i, f := range filters {
+		var cause string
+		switch f.Condition {
+		case xql.CONDITION_AND:
+			cause = "AND"
+		case xql.CONDITION_OR:
+			cause = "OR"
+		}
+		if i == 0 {
+			cause = "WHERE"
+		}
+		if f.Operator == "" {
+			s = fmt.Sprintf(`%s %s %s`, s, cause, f.Field)
+		} else if f.Reversed {
+			n += 1
+			if f.Function != "" {
+				s = fmt.Sprintf(`%s %s %s($%d) %s %s`, s, cause, f.Function, n, f.Operator, escapePGkw(f.Field))
+			} else {
+				s = fmt.Sprintf(`%s %s $%d %s %s`, s, cause, n, f.Operator, escapePGkw(f.Field))
+			}
+
+			args = append(args, f.Value)
+		} else {
+			n += 1
+			if f.Function != "" {
+				s = fmt.Sprintf(`%s %s %s %s %s($%d)`, s, cause, escapePGkw(f.Field), f.Operator, f.Function, n)
+			} else {
+				s = fmt.Sprintf(`%s %s %s %s $%d`, s, cause, escapePGkw(f.Field), f.Operator, n)
+			}
+
+			args = append(args, f.Value)
+		}
+	}
+	return
+}
+
+func CreateSchema(db *sql.DB, schema string) error {
+	s := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", schema)
+	//fmt.Println(">>>", s)
+	if _, e := db.Exec(s); nil != e {
+		return e
+	}
+	return nil
+}
+
+func Initialize_HSTORE(db *sql.DB, schema ...string) error {
+	s := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS hstore SCHEMA %s", schema[0])
+	//fmt.Println(">>>", s)
+	if _, e := db.Exec(s); nil != e {
+		return e
+	}
+	return nil
+}
+
+func Initialize_UUID(db *sql.DB, schema ...string) error {
+	s := fmt.Sprintf("CREATE EXTENSION  IF NOT EXISTS \"uuid-ossp\" SCHEMA %s", schema[0])
+	//fmt.Println(">>>", s)
+	if _, e := db.Exec(s); nil != e {
+		return e
+	}
+	return nil
 }
 
 // Register the dialect.
 func init() {
-    xql.RegisterDialect("postgres", &PostgresDialect{})
+	xql.RegisterDialect("postgres", &PostgresDialect{})
 }

@@ -9,6 +9,7 @@ type IDialect interface {
     Drop(*Table, bool) (string, []interface{}, error)
     Select(*Table, []QueryColumn, []QueryFilter, []QueryOrder, int64, int64) (string, []interface{}, error)
     Insert(*Table, interface{}, ...string) (string, []interface{}, error)
+    InsertWithInsertedId(*Table, interface{}, string, ...string) (string, []interface{}, error)
     Update(*Table, []QueryFilter, ...UpdateColumn) (string, []interface{}, error)
     Delete(*Table, []QueryFilter) (string, []interface{}, error)
 }
@@ -34,6 +35,14 @@ func CreateEngine(name string, dataSource string) (*Engine, error) {
         return nil, err
     }
     return &Engine{db: db, driverName: name}, nil
+}
+
+func (engine Engine) DB() *sql.DB {
+    return engine.db
+}
+
+func (engine Engine) DriverName() string {
+    return engine.driverName
 }
 
 func (engine *Engine) MakeSession() *Session {
