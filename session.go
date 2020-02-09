@@ -68,7 +68,7 @@ func (session *Session) Close() {
 	if session.tx != nil {
 		_ = session.tx.Rollback()
 	}
-	_ = session.db.Close()
+	//_ = session.db.Close()
 }
 
 func (session *Session) Table(table *Table, columns ...interface{}) QuerySet {
