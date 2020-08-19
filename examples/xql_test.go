@@ -51,7 +51,7 @@ type People struct {
 	LastName    string     `json:"lastName" xql:"size=24,default=''"`
 	Region      string     `json:"region"  xql:"size=24,nullable=true"`
 	Age         int        `json:"age" xql:"check=(age>18)"`
-	SchoolId    int        `json:"schoolId"  xql:"type=integer,fk=schools.id,nullable,ondelete=CASCADE"`
+	SchoolId    int        `json:"schoolId"  xql:"type=integer,fk=schools.id,ondelete=CASCADE"`
 	Description string     `json:"description"  xql:"name=desc,type=text,size=24,default=''"`
 	Created     *time.Time `json:"created"  xql:"type=timestamp,default=Now()"`
 	Updated     *time.Time `json:"Updated"  xql:"type=timestamp,default=Now()"`
@@ -82,29 +82,36 @@ var StudentTable = xql.DeclareTable(&Student{})
 var TeacherTable = xql.DeclareTable(&Teacher{})
 var SchoolTable = xql.DeclareTable(&School{})
 var session *xql.Session
+var schoolId int
 
 func TestMain(m *testing.M) {
 	var retCode int
 	var e error
-	session, e = prepare()
-	if nil != e {
+
+	if session, e = prepare(); nil != e {
 		fmt.Println("> Prepare failed:>", e)
 		os.Exit(-1)
 	}
-	//e = destroyTables(session, StudentTable, TeacherTable, SchoolTable)
-	//if nil != e {
-	//    fmt.Println("> Destroy Tables failed:>", e)
-	//    os.Exit(-1)
-	//}
+
 	e = createTables(session, SchoolTable, TeacherTable, StudentTable)
 	if nil != e {
 		fmt.Println("> Create Tables failed:>", e)
 		os.Exit(-1)
 	}
-	if nil == e {
-		retCode = m.Run()
+
+	c := School{Name: "Xinxiu Primary School", Description: "Xinxiu"}
+	c.Tags = []string{"Primary", "Luohu", "Shenzhen", "Public"}
+	if e := session.Table(SchoolTable).InsertWithInsertedId(&c, "id", &schoolId); nil != e {
+		fmt.Println("Insert failed:> ", e)
+		os.Exit(-1)
 	} else {
-		retCode = -1
+		fmt.Println("Inserted School: ", schoolId, c)
+	}
+	retCode = m.Run()
+
+	if e := destroyTables(session, StudentTable, TeacherTable, SchoolTable); nil != e {
+		fmt.Println("> Destroy Tables failed:>", e)
+		os.Exit(-1)
 	}
 	os.Exit(retCode)
 }
@@ -145,9 +152,8 @@ func destroyTables(s *xql.Session, tables ...*xql.Table) error {
 
 func TestQuerySet_Insert(t *testing.T) {
 	t1 := time.Now()
-	c := School{Name: "Xinxiu Primary School", Description: "Xinxiu"}
-	c.Tags = []string{"Primary", "Luohu", "Shenzhen", "Public"}
-	c1 := Student{People: People{FullName: "Tom Cruse", Region: "US", Age: 19, SchoolId: c.Id}}
+
+	c1 := Student{People: People{FullName: "Tom Cruse", Region: "US", Age: 19, SchoolId: schoolId}}
 	c1.Attributes = make(map[string]interface{})
 	c1.Attributes["skill"] = "Good"
 	c1.Attributes["score"] = "99.5"
@@ -155,7 +161,7 @@ func TestQuerySet_Insert(t *testing.T) {
 	c1.Character.Attitude = "OK"
 	c1.Character.Height = 172
 	c1.Character.Weight = 68
-	c2 := Student{People: People{FullName: "Hue Jackman", Region: "US", Age: 21, SchoolId: c.Id}}
+	c2 := Student{People: People{FullName: "Hue Jackman", Region: "US", Age: 21, SchoolId: schoolId}}
 	c2.Attributes = make(map[string]interface{})
 	c2.Attributes["skill"] = "Normal"
 	c2.Attributes["score"] = "79.5"
@@ -163,14 +169,8 @@ func TestQuerySet_Insert(t *testing.T) {
 	c2.Character.Attitude = "Good"
 	c2.Character.Height = 192
 	c2.Character.Weight = 88
-	var id int
-	if e := session.Table(SchoolTable).InsertWithInsertedId(&c, "id", &id); nil != e {
-		t.Fatal("Insert failed:> ", e)
-	} else {
-		t.Log("Inserted School: ", id, c)
-	}
-	c1.SchoolId = id
-	c2.SchoolId = id
+	c1.SchoolId = schoolId
+	c2.SchoolId = schoolId
 	if n, e := session.Table(StudentTable).Insert(&c1, &c2); nil != e {
 		t.Fatal("Insert failed:> ", e)
 	} else {
@@ -268,19 +268,15 @@ func TestQuerySet_Delete(t *testing.T) {
 		t.Log("Deleted all rows:>", n)
 	}
 
-	if n, e := session.Table(SchoolTable).Delete(); nil != e {
-		t.Fatal("Delete all failed:>", e)
-	} else {
-		t.Log("Deleted all rows:>", n)
-	}
-
 	t.Log("Time spent:> ", time.Now().Sub(t1))
 }
+
 var n int
+
 func Benchmark_Insert(b *testing.B) {
 	//var n int
 	for i := 0; i < b.N; i++ {
-		var c1 = Student{People: People{FullName: fmt.Sprintf("Tom Cruse %d", n), Region: "US", Age: 19 + i, SchoolId: 0}}
+		var c1 = Student{People: People{FullName: fmt.Sprintf("Tom Cruse %d", n), Region: "US", Age: 19 + i, SchoolId: schoolId}}
 		c1.FullName = fmt.Sprintf("Tom Cruse %d", n)
 		c1.Attributes = make(map[string]interface{})
 		c1.Attributes["skill"] = "Good"
