@@ -271,10 +271,26 @@ func TestQuerySet_Delete(t *testing.T) {
 	t.Log("Time spent:> ", time.Now().Sub(t1))
 }
 
-var n int
+var n, ns int
 
-func Benchmark_Insert(b *testing.B) {
+func Benchmark_InsertSchool(b *testing.B) {
 	//var n int
+	for i := 0; i < b.N; i++ {
+		var s = School{
+			Name:        fmt.Sprintf("School %d", ns),
+			Description: "Just for test",
+			Tags:        []string{"A", "B", "C"},
+		}
+		if e := session.Table(SchoolTable).InsertWithInsertedId(&s, "id", &schoolId); nil != e {
+			b.Fatal("Insert failed:> ", e)
+		} else {
+			b.Log("Inserted Students: ", schoolId, s.Name)
+		}
+		ns++
+	}
+}
+
+func Benchmark_InsertStudent(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var c1 = Student{People: People{FullName: fmt.Sprintf("Tom Cruse %d", n), Region: "US", Age: 19 + i, SchoolId: schoolId}}
 		c1.FullName = fmt.Sprintf("Tom Cruse %d", n)
@@ -285,11 +301,26 @@ func Benchmark_Insert(b *testing.B) {
 		c1.Character.Attitude = "OK"
 		c1.Character.Height = 172
 		c1.Character.Weight = 68
-		if n, e := session.Table(StudentTable).Insert(&c1); nil != e {
+		if e := session.Table(StudentTable).InsertWithInsertedId(&c1, "id", &c1.Id); nil != e {
 			b.Fatal("Insert failed:> ", e)
 		} else {
-			b.Log("Inserted Students: ", n)
+			b.Log("Inserted Students: ", c1.Id, c1.FullName)
 		}
 		n++
+	}
+}
+
+func Benchmark_SelectStudent(b *testing.B) {
+	if rows, e := session.Table(StudentTable).Offset(0).Limit(int64(b.N)).All(); nil != e {
+		b.Fatal("Select failed:", e)
+	} else {
+		for rows.Next() {
+			var c Student
+			if e := rows.Scan(&c); nil != e {
+				b.Fatal("Scan failed:", e)
+			} else {
+				b.Log("Student:>", c.Id, c.FullName, c.Created)
+			}
+		}
 	}
 }
