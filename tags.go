@@ -7,12 +7,66 @@ import (
 
 type PropertySet map[string]string
 
+const (
+	SingleQuoteOpened uint = 0x01
+	DoubleQuoteOpened uint = 0x02
+	SBraceOpened      uint = 0x04
+	MBraceOpened      uint = 0x08
+	BBraceOpened      uint = 0x10
+)
+
+func ParseDottedArgs(s string) (ret []string) {
+	var opened uint
+	var chars []rune
+	for _, c := range s {
+		switch c {
+		case '\'':
+			opened ^= SingleQuoteOpened
+			chars = append(chars, c)
+		case '"':
+			opened ^= DoubleQuoteOpened
+			chars = append(chars, c)
+		case '(':
+			opened |= SBraceOpened
+			chars = append(chars, c)
+		case ')':
+			opened &= ^SBraceOpened
+			chars = append(chars, c)
+		case '{':
+			opened |= BBraceOpened
+			chars = append(chars, c)
+		case '}':
+			opened &= ^BBraceOpened
+			chars = append(chars, c)
+		case '[':
+			opened |= MBraceOpened
+			chars = append(chars, c)
+		case ']':
+			opened &= ^MBraceOpened
+			chars = append(chars, c)
+		case ',':
+			if opened == 0 && len(chars) > 0 {
+				ret = append(ret, string(chars))
+				chars = []rune{}
+			} else {
+				chars = append(chars, c)
+			}
+		default:
+			chars = append(chars, c)
+		}
+	}
+	if len(chars) > 0 {
+		ret = append(ret, string(chars))
+	}
+	return
+}
+
 func ParseProperties(s string) (PropertySet, error) {
 	p := make(PropertySet)
 	if s == "" {
 		return p, nil
 	}
-	for _, ss := range strings.Split(s, ",") {
+	for _, ss := range ParseDottedArgs(s) {
 		if ss == "" {
 			continue
 		}

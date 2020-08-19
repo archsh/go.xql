@@ -109,8 +109,8 @@ func TestMain(m *testing.M) {
 	}
 	retCode = m.Run()
 
-	if e := destroyTables(session, StudentTable, TeacherTable, SchoolTable); nil != e {
-		fmt.Println("> Destroy Tables failed:>", e)
+	if e := truncateTables(session, StudentTable, TeacherTable, SchoolTable); nil != e {
+		fmt.Println("> Truncate Tables failed:>", e)
 		os.Exit(-1)
 	}
 	os.Exit(retCode)
@@ -137,6 +137,17 @@ func createTables(s *xql.Session, tables ...*xql.Table) error {
 		}
 	}
 
+	return nil
+}
+
+func truncateTables(s *xql.Session, tables ...*xql.Table) error {
+	for _, t := range tables {
+		if _, e := s.Table(t).Delete(); nil != e {
+			return e
+		} else {
+
+		}
+	}
 	return nil
 }
 
