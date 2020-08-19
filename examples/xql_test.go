@@ -51,7 +51,7 @@ type People struct {
 	LastName    string     `json:"lastName" xql:"size=24,default=''"`
 	Region      string     `json:"region"  xql:"size=24,nullable=true"`
 	Age         int        `json:"age" xql:"check=(age>18)"`
-	SchoolId    int        `json:"schoolId"  xql:"type=integer,fk=schools.id,ondelete=CASCADE"`
+	SchoolId    int        `json:"schoolId"  xql:"type=integer,fk=schools.id,nullable,ondelete=CASCADE"`
 	Description string     `json:"description"  xql:"name=desc,type=text,size=24,default=''"`
 	Created     *time.Time `json:"created"  xql:"type=timestamp,default=Now()"`
 	Updated     *time.Time `json:"Updated"  xql:"type=timestamp,default=Now()"`
@@ -91,12 +91,12 @@ func TestMain(m *testing.M) {
 		fmt.Println("> Prepare failed:>", e)
 		os.Exit(-1)
 	}
-	//e = destroy_tables(session, StudentTable, TeacherTable, SchoolTable)
+	//e = destroyTables(session, StudentTable, TeacherTable, SchoolTable)
 	//if nil != e {
 	//    fmt.Println("> Destroy Tables failed:>", e)
 	//    os.Exit(-1)
 	//}
-	e = create_tables(session, SchoolTable, TeacherTable, StudentTable)
+	e = createTables(session, SchoolTable, TeacherTable, StudentTable)
 	if nil != e {
 		fmt.Println("> Create Tables failed:>", e)
 		os.Exit(-1)
@@ -111,7 +111,7 @@ func TestMain(m *testing.M) {
 
 func prepare() (*xql.Session, error) {
 	engine, e := xql.CreateEngine("postgres",
-		"host=postgresql port=5432 user=postgres password=postgres dbname=test sslmode=disable")
+		"host=localhost port=5432 user=postgres password=postgres dbname=testdb sslmode=disable")
 	if nil != e {
 		return nil, e
 	}
@@ -122,7 +122,7 @@ func prepare() (*xql.Session, error) {
 	return sess, nil
 }
 
-func create_tables(s *xql.Session, tables ...*xql.Table) error {
+func createTables(s *xql.Session, tables ...*xql.Table) error {
 	for _, t := range tables {
 		e := s.Create(t)
 		if nil != e {
@@ -133,7 +133,7 @@ func create_tables(s *xql.Session, tables ...*xql.Table) error {
 	return nil
 }
 
-func destroy_tables(s *xql.Session, tables ...*xql.Table) error {
+func destroyTables(s *xql.Session, tables ...*xql.Table) error {
 	for _, t := range tables {
 		e := s.Drop(t, true)
 		if nil != e {
@@ -195,7 +195,7 @@ func TestQuerySet_One(t *testing.T) {
 	t1 := time.Now()
 	crew := Student{}
 	if e := session.Table(StudentTable).One().Scan(&crew); nil != e {
-		t.Fatal("Qery One failed:>", e)
+		t.Fatal("Query One failed:>", e)
 	} else {
 		t.Log("Queried One:>", crew)
 	}
@@ -261,5 +261,39 @@ func TestQuerySet_Delete(t *testing.T) {
 	} else {
 		t.Log("Deleted rows:>", n)
 	}
+
+	if n, e := session.Table(StudentTable).Delete(); nil != e {
+		t.Fatal("Delete all failed:>", e)
+	} else {
+		t.Log("Deleted all rows:>", n)
+	}
+
+	if n, e := session.Table(SchoolTable).Delete(); nil != e {
+		t.Fatal("Delete all failed:>", e)
+	} else {
+		t.Log("Deleted all rows:>", n)
+	}
+
 	t.Log("Time spent:> ", time.Now().Sub(t1))
+}
+var n int
+func Benchmark_Insert(b *testing.B) {
+	//var n int
+	for i := 0; i < b.N; i++ {
+		var c1 = Student{People: People{FullName: fmt.Sprintf("Tom Cruse %d", n), Region: "US", Age: 19 + i, SchoolId: 0}}
+		c1.FullName = fmt.Sprintf("Tom Cruse %d", n)
+		c1.Attributes = make(map[string]interface{})
+		c1.Attributes["skill"] = "Good"
+		c1.Attributes["score"] = "99.5"
+		c1.Scores = []float64{99, 96, 93}
+		c1.Character.Attitude = "OK"
+		c1.Character.Height = 172
+		c1.Character.Weight = 68
+		if n, e := session.Table(StudentTable).Insert(&c1); nil != e {
+			b.Fatal("Insert failed:> ", e)
+		} else {
+			b.Log("Inserted Students: ", n)
+		}
+		n++
+	}
 }
