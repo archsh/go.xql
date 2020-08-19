@@ -36,11 +36,11 @@ type Character struct {
 //}
 
 func (j *Character) Scan(value interface{}) error {
-	return postgres.JSONB_Scan(j, value)
+	return postgres.JsonbScan(j, value)
 }
 
 func (j Character) Value() (driver.Value, error) {
-	return postgres.JSONB_Value(j)
+	return postgres.JsonbValue(j)
 }
 
 type People struct {
@@ -115,7 +115,7 @@ func prepare() (*xql.Session, error) {
 	if nil != e {
 		return nil, e
 	}
-	if e := postgres.Initialize_HSTORE(engine.DB(), "public"); nil != e {
+	if e := postgres.InitializeHSTORE(engine.DB(), "public"); nil != e {
 		return nil, e
 	}
 	sess := engine.MakeSession()

@@ -113,10 +113,10 @@ func (h HSTORE) Value() (driver.Value, error) {
 	if h == nil {
 		return nil, nil
 	}
-	parts := []string{}
+	var parts []string
 	for key, val := range h {
-		thispart := hQuote(key) + "=>" + hQuote(val)
-		parts = append(parts, thispart)
+		thisPart := hQuote(key) + "=>" + hQuote(val)
+		parts = append(parts, thisPart)
 	}
 	return []byte(strings.Join(parts, ",")), nil
 }

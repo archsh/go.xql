@@ -71,7 +71,7 @@ CREATE INDEX ix_public_metas_vod_albums_idx
 */
 
 func makeInlineConstraint(c ...*xql.Constraint) string {
-	constraints := []string{}
+	var constraints []string
 	for _, x := range c {
 		switch x.Type {
 		case xql.ConstraintNotNull:
@@ -112,35 +112,35 @@ func makeInlineConstraint(c ...*xql.Constraint) string {
 
 func makeConstraints(t *xql.Table, idx int, c ...*xql.Constraint) (ret []string) {
 	for _, x := range c {
-		fields := []string{}
+		var fields []string
 		for _, cc := range x.Columns {
 			fields = append(fields, cc.FieldName)
 		}
-		field_str := strings.Join(fields, ",")
-		name_str := fmt.Sprintf("%s_%s", t.BaseTableName(), strings.Join(fields, "_"))
+		fieldStr := strings.Join(fields, ",")
+		nameStr := fmt.Sprintf("%s_%s", t.BaseTableName(), strings.Join(fields, "_"))
 		switch x.Type {
 		//case xql.ConstraintNotNull:
 		//    ret = append(ret, fmt.Sprintf("NOT NUL"))
 		case xql.ConstraintUnique:
-			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_unique UNIQUE (%s)", name_str, escapePGkw(field_str)))
+			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_unique UNIQUE (%s)", nameStr, escapePGkw(fieldStr)))
 		case xql.ConstraintCheck:
-			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_check CHECK (%s)", name_str, x.Statement))
+			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_check CHECK (%s)", nameStr, x.Statement))
 		case xql.ConstraintExclude:
-			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_exclude EXCLUDE USING %s", name_str, x.Statement))
+			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_exclude EXCLUDE USING %s", nameStr, x.Statement))
 		case xql.ConstraintForeignKey:
-			ondelete := ""
-			onupdate := ""
+			onDelete := ""
+			onUpdate := ""
 			if x.OnDelete != "" {
-				ondelete = "ON DELETE " + x.OnDelete
+				onDelete = "ON DELETE " + x.OnDelete
 			}
 			if x.OnUpdate != "" {
-				onupdate = "ON UPDATE " + x.OnUpdate
+				onUpdate = "ON UPDATE " + x.OnUpdate
 			}
 			ret = append(ret,
 				fmt.Sprintf("CONSTRAINT %s_fkey FOREIGN KEY (%s) REFERENCES %s %s %s",
-					name_str, escapePGkw(field_str), x.Statement, onupdate, ondelete))
+					nameStr, escapePGkw(fieldStr), x.Statement, onUpdate, onDelete))
 		case xql.ConstraintPrimaryKey:
-			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", name_str, escapePGkw(field_str)))
+			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", nameStr, escapePGkw(fieldStr)))
 		}
 	}
 	return
@@ -148,7 +148,7 @@ func makeConstraints(t *xql.Table, idx int, c ...*xql.Constraint) (ret []string)
 
 func makeIndexes(t *xql.Table, idx int, i ...*xql.Index) (ret []string) {
 	for _, ii := range i {
-		fs := []string{}
+		var fs []string
 		for _, c := range ii.Columns {
 			fs = append(fs, c.FieldName)
 		}
@@ -181,8 +181,8 @@ func (pb PostgresDialect) Drop(t *xql.Table, force bool) (stm string, args []int
 		err = errors.New("table can not be nil")
 		return
 	}
-	statements := []string{}
-	indexes := []*xql.Index{}
+	var statements []string
+	var indexes []*xql.Index
 	schema := ""
 	forced := ""
 	if force {
@@ -204,7 +204,7 @@ func (pb PostgresDialect) Drop(t *xql.Table, force bool) (stm string, args []int
 // Implement the IDialect interface for creating table.
 func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
 	var createSQL string
-	var tableName string = t.TableName()
+	var tableName = t.TableName()
 	createSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " ( "
 	var indexes []*xql.Index
 	var cols []string
@@ -230,11 +230,11 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
 // Select
 // Implement the IDialect interface for select values.
 func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, lockFor string, offset int64, limit int64) (s string, args []interface{}, err error) {
-	var colnames []string
+	var colNames []string
 	for _, x := range cols {
-		colnames = append(colnames, x.String())
+		colNames = append(colNames, x.String())
 	}
-	s = fmt.Sprintf("SELECT %s FROM ", strings.Join(colnames, ","))
+	s = fmt.Sprintf("SELECT %s FROM ", strings.Join(colNames, ","))
 	s += t.TableName()
 	var n int
 	for i, f := range filters {
@@ -270,17 +270,17 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
 			args = append(args, f.Value)
 		}
 	}
-	var s_orders []string
+	var sOrders []string
 	for _, o := range orders {
 		switch o.Type {
 		case xql.OrderAsc:
-			s_orders = append(s_orders, fmt.Sprintf(`%s ASC`, escapePGkw(o.Field)))
+			sOrders = append(sOrders, fmt.Sprintf(`%s ASC`, escapePGkw(o.Field)))
 		case xql.OrderDesc:
-			s_orders = append(s_orders, fmt.Sprintf(`%s DESC`, escapePGkw(o.Field)))
+			sOrders = append(sOrders, fmt.Sprintf(`%s DESC`, escapePGkw(o.Field)))
 		}
 	}
-	if len(s_orders) > 0 {
-		s = fmt.Sprintf(`%s ORDER BY %s`, s, strings.Join(s_orders, ","))
+	if len(sOrders) > 0 {
+		s = fmt.Sprintf(`%s ORDER BY %s`, s, strings.Join(sOrders, ","))
 	}
 	if offset >= 0 {
 		s = fmt.Sprintf(`%s OFFSET %d`, s, offset)
@@ -329,13 +329,13 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
 	var i int
 	for _, n := range col {
 		column, ok := t.GetColumn(n)
-		if ! ok {
+		if !ok {
 			continue
 		}
 		fv := reflect.Indirect(r).FieldByName(column.ElemName)
 		fv.Kind()
 		//if fv.Interface() == reflect.Zero(fv.Type()).Interface() {
-		if ! fv.IsValid() || isEmptyValue(fv) {
+		if !fv.IsValid() || isEmptyValue(fv) {
 			//if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()).Interface() == fv.Interface() {
 			//    if column.PrimaryKey && column.Default == nil {
 			//        continue
@@ -370,13 +370,13 @@ func (pb PostgresDialect) InsertWithInsertedId(t *xql.Table, obj interface{}, in
 	var i int
 	for _, n := range col {
 		column, ok := t.GetColumn(n)
-		if ! ok {
+		if !ok {
 			continue
 		}
 		fv := reflect.Indirect(r).FieldByName(column.ElemName)
 		fv.Kind()
 		//if fv.Interface() == reflect.Zero(fv.Type()).Interface() {
-		if ! fv.IsValid() || isEmptyValue(fv) {
+		if !fv.IsValid() || isEmptyValue(fv) {
 			//if ( fv.Kind() == reflect.Ptr && fv.IsNil() ) || reflect.Zero(fv.Type()).Interface() == fv.Interface() {
 			//    if column.PrimaryKey && column.Default == nil {
 			//        continue
@@ -516,7 +516,7 @@ func CreateSchema(db *sql.DB, schema string) error {
 	return nil
 }
 
-func Initialize_HSTORE(db *sql.DB, schema ...string) error {
+func InitializeHSTORE(db *sql.DB, schema ...string) error {
 	s := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS hstore SCHEMA %s", schema[0])
 	//fmt.Println(">>>", s)
 	if _, e := db.Exec(s); nil != e {
@@ -525,7 +525,7 @@ func Initialize_HSTORE(db *sql.DB, schema ...string) error {
 	return nil
 }
 
-func Initialize_UUID(db *sql.DB, schema ...string) error {
+func InitializeUUID(db *sql.DB, schema ...string) error {
 	s := fmt.Sprintf("CREATE EXTENSION  IF NOT EXISTS \"uuid-ossp\" SCHEMA %s", schema[0])
 	//fmt.Println(">>>", s)
 	if _, e := db.Exec(s); nil != e {

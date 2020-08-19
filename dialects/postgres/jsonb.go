@@ -16,11 +16,11 @@ func (j JSON) Declare(props xql.PropertySet) string {
 }
 
 func (j *JSON) Scan(value interface{}) error {
-	return JSONB_Scan(j, value)
+	return JsonbScan(j, value)
 }
 
 func (j JSON) Value() (driver.Value, error) {
-	return JSONB_Value(j)
+	return JsonbValue(j)
 }
 
 type JSONB JSON
@@ -30,14 +30,14 @@ func (j JSONB) Declare(props xql.PropertySet) string {
 }
 
 func (j *JSONB) Scan(value interface{}) error {
-	return JSONB_Scan(j, value)
+	return JsonbScan(j, value)
 }
 
 func (j JSONB) Value() (driver.Value, error) {
-	return JSONB_Value(j)
+	return JsonbValue(j)
 }
 
-func JSONB_Scan(dest interface{}, src interface{}) error {
+func JsonbScan(dest interface{}, src interface{}) error {
 	if nil == src {
 		dest = nil
 		return nil
@@ -57,6 +57,6 @@ func JSONB_Scan(dest interface{}, src interface{}) error {
 	return nil
 }
 
-func JSONB_Value(obj interface{}) (driver.Value, error) {
+func JsonbValue(obj interface{}) (driver.Value, error) {
 	return json.Marshal(obj)
 }
