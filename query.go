@@ -114,10 +114,10 @@ func (xr *XRows) Close() {
 func makeQueryOrder(table *Table, s string) QueryOrder {
 	qo := QueryOrder{}
 	if s[:1] == "-" {
-		qo.Type = ORDER_DESC
+		qo.Type = OrderDesc
 		qo.Field = s[1:]
 	} else {
-		qo.Type = ORDER_ASC
+		qo.Type = OrderAsc
 		qo.Field = s
 	}
 	return qo
@@ -159,7 +159,7 @@ func (qs QuerySet) And(field string, val interface{}, ops ...string) QuerySet {
 }
 
 func (qs QuerySet) Or(field string, val interface{}, ops ...string) QuerySet {
-	f := QueryFilter{Field: field, Value: val, Operator: "=", Condition: CONDITION_OR}
+	f := QueryFilter{Field: field, Value: val, Operator: "=", Condition: ConditionOr}
 	if len(ops) > 0 {
 		f.Operator = ops[0]
 		if len(ops) > 1 {
@@ -228,16 +228,16 @@ func (qs QuerySet) Limit(limit int64) QuerySet {
 }
 
 func (qs QuerySet) Count(cols ...string) (int64, error) {
-	var fieldname string
+	var fieldName string
 	if len(cols) > 0 {
-		fieldname = cols[0]
-	} else if len(qs.table.primary_keys) > 0 {
-		fieldname = qs.table.primary_keys[0].FieldName
+		fieldName = cols[0]
+	} else if len(qs.table.primaryKeys) > 0 {
+		fieldName = qs.table.primaryKeys[0].FieldName
 	} else {
-		fieldname = qs.table.columns[0].FieldName
+		fieldName = qs.table.columns[0].FieldName
 	}
 	s, args, err := qs.session.getDialect().Select(qs.table,
-		[]QueryColumn{{Function: "COUNT", FieldName: fieldname}},
+		[]QueryColumn{{Function: "COUNT", FieldName: fieldName}},
 		qs.filters, nil, qs.lockFor, -1, -1)
 	if nil != err {
 		return 0, err
@@ -252,7 +252,7 @@ func (qs QuerySet) Count(cols ...string) (int64, error) {
 
 func (qs QuerySet) All() (*XRows, error) {
 	if len(qs.queries) < 1 {
-		for _, col := range qs.table.m_columns {
+		for _, col := range qs.table.mColumns {
 			qs.queries = append(qs.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
 		}
 	}
@@ -271,7 +271,7 @@ func (qs QuerySet) All() (*XRows, error) {
 
 func (qs QuerySet) One() *XRow {
 	if len(qs.queries) < 1 {
-		for _, col := range qs.table.m_columns {
+		for _, col := range qs.table.mColumns {
 			qs.queries = append(qs.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
 		}
 	}
@@ -288,17 +288,17 @@ func (qs QuerySet) One() *XRow {
 
 func (qs QuerySet) Get(pks ...interface{}) *XRow {
 	if len(qs.queries) < 1 {
-		for _, col := range qs.table.m_columns {
+		for _, col := range qs.table.mColumns {
 			qs.queries = append(qs.queries, QueryColumn{FieldName: col.FieldName, Alias: col.FieldName})
 		}
 	}
-	if len(pks) != len(qs.table.primary_keys) {
+	if len(pks) != len(qs.table.primaryKeys) {
 		panic("Primary Key number not match!")
 	}
 	qs.filters = make([]QueryFilter, 0, len(pks))
 	for i, pk := range pks {
 		filter := QueryFilter{
-			Field:    qs.table.primary_keys[i].FieldName,
+			Field:    qs.table.primaryKeys[i].FieldName,
 			Value:    pk,
 			Operator: "=",
 		}
@@ -316,15 +316,15 @@ func (qs QuerySet) Get(pks ...interface{}) *XRow {
 
 func (qs QuerySet) Update(vals interface{}) (int64, error) {
 	var cols []UpdateColumn
-	//fmt.Println("Update:>", qs.table.m_columns)
+	//fmt.Println("Update:>", qs.table.mColumns)
 	if cm, ok := vals.(map[string]interface{}); ok {
 		for k, v := range cm {
 			var fk string
-			if c, ok := qs.table.x_columns[k]; ok {
+			if c, ok := qs.table.xColumns[k]; ok {
 				fk = c.FieldName
-			} else if c, ok := qs.table.m_columns[k]; ok {
+			} else if c, ok := qs.table.mColumns[k]; ok {
 				fk = c.FieldName
-			} else if c, ok := qs.table.j_columns[k]; ok {
+			} else if c, ok := qs.table.jColumns[k]; ok {
 				fk = c.FieldName
 			} else {
 				return 0, errors.New("Invalid column:" + k)

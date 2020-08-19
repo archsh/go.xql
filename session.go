@@ -129,7 +129,7 @@ func (session *Session) Rollback() error {
 	return err
 }
 
-func log_timing(t1 time.Time, msg string, params ...interface{}) {
+func logTiming(t1 time.Time, msg string, params ...interface{}) {
 	t2 := time.Now()
 	fmt.Println(t1, t2, t2.Sub(t1), msg, params)
 }
@@ -137,7 +137,7 @@ func log_timing(t1 time.Time, msg string, params ...interface{}) {
 func (session *Session) Exec(query string, args ...interface{}) (sql.Result, error) {
 	if session.verbose {
 		t1 := time.Now()
-		defer log_timing(t1, "Session.Exec:", query)
+		defer logTiming(t1, "Session.Exec:", query)
 	}
 	if session.tx != nil {
 		if session.verbose {
@@ -156,7 +156,7 @@ func (session *Session) Exec(query string, args ...interface{}) (sql.Result, err
 func (session *Session) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	if session.verbose {
 		t1 := time.Now()
-		defer log_timing(t1, "Session.Query:", query)
+		defer logTiming(t1, "Session.Query:", query)
 	}
 	if session.tx != nil {
 		if session.verbose {
@@ -175,7 +175,7 @@ func (session *Session) Query(query string, args ...interface{}) (*sql.Rows, err
 func (session *Session) QueryRow(query string, args ...interface{}) *sql.Row {
 	if session.verbose {
 		t1 := time.Now()
-		defer log_timing(t1, "Session.doQueryRaw:", query)
+		defer logTiming(t1, "Session.doQueryRaw:", query)
 	}
 	if session.tx != nil {
 		if session.verbose {

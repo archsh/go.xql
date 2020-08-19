@@ -3,15 +3,15 @@ package xql
 type ConditionType uint
 
 const (
-	CONDITION_AND ConditionType = iota
-	CONDITION_OR
+	ConditionAnd ConditionType = iota
+	ConditionOr
 )
 
 type OrderType uint
 
 const (
-	ORDER_ASC OrderType = iota
-	ORDER_DESC
+	OrderAsc OrderType = iota
+	OrderDesc
 )
 
 type QueryFilter struct {

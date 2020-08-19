@@ -74,15 +74,15 @@ func makeInlineConstraint(c ...*xql.Constraint) string {
 	constraints := []string{}
 	for _, x := range c {
 		switch x.Type {
-		case xql.CONSTRAINT_NOT_NULL:
+		case xql.ConstraintNotNull:
 			constraints = append(constraints, "NOT NULL")
-		case xql.CONSTRAINT_UNIQUE:
+		case xql.ConstraintUnique:
 			constraints = append(constraints, "UNIQUE")
-		case xql.CONSTRAINT_CHECK:
+		case xql.ConstraintCheck:
 			constraints = append(constraints, fmt.Sprintf("CHECK (%s)", x.Statement))
-			//case xql.CONSTRAINT_EXCLUDE:
+			//case xql.ConstraintExclude:
 			//constraints = append(constraints, "NOT NUL")
-		case xql.CONSTRAINT_FOREIGNKEY:
+		case xql.ConstraintForeignKey:
 			onDelete := ""
 			onUpdate := ""
 			if x.OnDelete != "" {
@@ -100,7 +100,7 @@ func makeInlineConstraint(c ...*xql.Constraint) string {
 				constraints = append(constraints, fmt.Sprintf("REFERENCES %s %s %s", xs[0], onUpdate, onDelete))
 			}
 
-		case xql.CONSTRAINT_PRIMARYKEY:
+		case xql.ConstraintPrimaryKey:
 			constraints = append(constraints, "PRIMARY KEY")
 		}
 	}
@@ -119,15 +119,15 @@ func makeConstraints(t *xql.Table, idx int, c ...*xql.Constraint) (ret []string)
 		field_str := strings.Join(fields, ",")
 		name_str := fmt.Sprintf("%s_%s", t.BaseTableName(), strings.Join(fields, "_"))
 		switch x.Type {
-		//case xql.CONSTRAINT_NOT_NULL:
+		//case xql.ConstraintNotNull:
 		//    ret = append(ret, fmt.Sprintf("NOT NUL"))
-		case xql.CONSTRAINT_UNIQUE:
+		case xql.ConstraintUnique:
 			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_unique UNIQUE (%s)", name_str, escapePGkw(field_str)))
-		case xql.CONSTRAINT_CHECK:
+		case xql.ConstraintCheck:
 			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_check CHECK (%s)", name_str, x.Statement))
-		case xql.CONSTRAINT_EXCLUDE:
+		case xql.ConstraintExclude:
 			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_exclude EXCLUDE USING %s", name_str, x.Statement))
-		case xql.CONSTRAINT_FOREIGNKEY:
+		case xql.ConstraintForeignKey:
 			ondelete := ""
 			onupdate := ""
 			if x.OnDelete != "" {
@@ -139,7 +139,7 @@ func makeConstraints(t *xql.Table, idx int, c ...*xql.Constraint) (ret []string)
 			ret = append(ret,
 				fmt.Sprintf("CONSTRAINT %s_fkey FOREIGN KEY (%s) REFERENCES %s %s %s",
 					name_str, escapePGkw(field_str), x.Statement, onupdate, ondelete))
-		case xql.CONSTRAINT_PRIMARYKEY:
+		case xql.ConstraintPrimaryKey:
 			ret = append(ret, fmt.Sprintf("CONSTRAINT %s_pkey PRIMARY KEY (%s)", name_str, escapePGkw(field_str)))
 		}
 	}
@@ -154,17 +154,17 @@ func makeIndexes(t *xql.Table, idx int, i ...*xql.Index) (ret []string) {
 		}
 		tp := ""
 		switch ii.Type {
-		case xql.INDEX_B_TREE:
+		case xql.IndexBTree:
 			tp = "USING btree"
-		case xql.INDEX_HASH:
+		case xql.IndexHash:
 			tp = "USING hash"
-		case xql.INDEX_BRIN:
+		case xql.IndexBrin:
 			tp = "USING brin"
-		case xql.INDEX_GIST:
+		case xql.IndexGist:
 			tp = "USING gist"
-		case xql.INDEX_SP_GIST:
+		case xql.IndexSpGist:
 			tp = "USING sp-gist"
-		case xql.INDEX_GIN:
+		case xql.IndexGin:
 			tp = "USING gin"
 		}
 		// CREATE INDEX test2_mm_idx ON test2 (major, minor);
@@ -240,9 +240,9 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
 	for i, f := range filters {
 		var cause string
 		switch f.Condition {
-		case xql.CONDITION_AND:
+		case xql.ConditionAnd:
 			cause = "AND"
-		case xql.CONDITION_OR:
+		case xql.ConditionOr:
 			cause = "OR"
 		}
 		if i == 0 {
@@ -273,9 +273,9 @@ func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters [
 	var s_orders []string
 	for _, o := range orders {
 		switch o.Type {
-		case xql.ORDER_ASC:
+		case xql.OrderAsc:
 			s_orders = append(s_orders, fmt.Sprintf(`%s ASC`, escapePGkw(o.Field)))
-		case xql.ORDER_DESC:
+		case xql.OrderDesc:
 			s_orders = append(s_orders, fmt.Sprintf(`%s DESC`, escapePGkw(o.Field)))
 		}
 	}
@@ -432,9 +432,9 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
 	for i, f := range filters {
 		var cause string
 		switch f.Condition {
-		case xql.CONDITION_AND:
+		case xql.ConditionAnd:
 			cause = "AND"
-		case xql.CONDITION_OR:
+		case xql.ConditionOr:
 			cause = "OR"
 		}
 		if i == 0 {
@@ -474,9 +474,9 @@ func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s str
 	for i, f := range filters {
 		var cause string
 		switch f.Condition {
-		case xql.CONDITION_AND:
+		case xql.ConditionAnd:
 			cause = "AND"
-		case xql.CONDITION_OR:
+		case xql.ConditionOr:
 			cause = "OR"
 		}
 		if i == 0 {

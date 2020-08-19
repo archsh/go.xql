@@ -24,13 +24,13 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
         entity:  entity,
     }
     t.columns = makeColumns(t, entity, false, skips...)
-    t.x_columns = make(map[string]*Column)
-    t.j_columns = make(map[string]*Column)
-    t.m_columns = make(map[string]*Column)
+    t.xColumns = make(map[string]*Column)
+    t.jColumns = make(map[string]*Column)
+    t.mColumns = make(map[string]*Column)
     for _, f := range t.columns {
-        t.x_columns[f.FieldName] = f
-        t.m_columns[f.ElemName] = f
-        t.j_columns[f.Jtag] = f
+        t.xColumns[f.FieldName] = f
+        t.mColumns[f.ElemName] = f
+        t.jColumns[f.JTag] = f
     }
     if len(schema) > 0 {
         t.schema = schema[0]
@@ -42,7 +42,7 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
 
     //t.constraints = makeConstraints(t.columns...)
     //t.indexes = makeIndexes(t.columns...)
-    if tt, ok := entity.(TableConstrainted); ok {
+    if tt, ok := entity.(TableConstrained); ok {
         t.constraints = append(t.constraints, buildConstraints(t, tt.Constraints()...)...)
     }
     if tt, ok := entity.(TableIndexed); ok {
@@ -50,14 +50,14 @@ func DeclareTable(entity TableIdentified, schema ...string) *Table {
     }
 
     for _, c := range t.constraints {
-        if c.Type == CONSTRAINT_PRIMARYKEY {
-            t.primary_keys = append(t.primary_keys, c.Columns...)
+        if c.Type == ConstraintPrimaryKey {
+            t.primaryKeys = append(t.primaryKeys, c.Columns...)
         }
     }
 
     for _, c := range t.columns {
         if c.PrimaryKey {
-            t.primary_keys = append(t.primary_keys, c)
+            t.primaryKeys = append(t.primaryKeys, c)
         }
     }
 
