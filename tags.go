@@ -47,10 +47,11 @@ func ParseDottedArgs(s string) (ret []string) {
 		case ',':
 			if opened == 0 && len(chars) > 0 {
 				ret = append(ret, string(chars))
-				chars = []rune{}
-			} else {
-				chars = append(chars, c)
 			}
+			chars = []rune{}
+			/*else {
+				chars = append(chars, c)
+			}*/
 		default:
 			chars = append(chars, c)
 		}

@@ -102,6 +102,7 @@ func makeColumn(t *Table, f reflect.StructField, v reflect.Value) *Column {
 	if nil != e {
 		panic(e)
 	}
+
 	field := &Column{
 		FieldName:   Camel2Underscore(f.Name),
 		ElemName:    f.Name,
@@ -165,6 +166,7 @@ func makeColumn(t *Table, f reflect.StructField, v reflect.Value) *Column {
 		if d, e := DefaultDeclare(f, props); nil == e {
 			field.TypeDefine = d
 		} else {
+			//fmt.Println("makeColumn:>", props)
 			panic(e)
 		}
 	}
