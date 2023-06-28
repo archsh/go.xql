@@ -179,12 +179,21 @@ func makeColumns(t *Table, p interface{}, recursive bool, skips ...string) []*Co
 	if nil == p {
 		panic("Can not use nil pointer ")
 	}
-	et := reflect.TypeOf(p)
-	ev := reflect.ValueOf(p)
+	var et reflect.Type
+	var ev reflect.Value
+	tt := reflect.TypeOf(p)
+	vv := reflect.ValueOf(p)
+	if tt.Kind() != reflect.Interface {
+		et = tt
+		ev = vv
+	} else {
+		et = tt.Elem()
+		ev = vv.Elem()
+	}
 	var fields []*Column
-	for i := 0; i < et.Elem().NumField(); i++ {
-		f := et.Elem().Field(i)
-		v := ev.Elem().Field(i)
+	for i := 0; i < et.NumField(); i++ {
+		f := et.Field(i)
+		v := ev.Field(i)
 		if inSlice(f.Name, skips) {
 			continue
 		}
@@ -195,7 +204,7 @@ func makeColumns(t *Table, p interface{}, recursive bool, skips ...string) []*Co
 		if f.Anonymous {
 			if xTags[0] != "-" {
 				sks := getSkips(xTags)
-				for _, c := range makeColumns(t, ev.Elem().Field(i).Addr().Interface(), true, sks...) {
+				for _, c := range makeColumns(t, ev.Field(i).Addr().Interface(), true, sks...) {
 					fields = append(fields, c)
 				}
 			} else {
