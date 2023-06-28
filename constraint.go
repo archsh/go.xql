@@ -15,22 +15,22 @@ import (
 
 const (
 	ConstraintNone uint8 = iota
-    ConstraintCheck
-    ConstraintNotNull
-    ConstraintUnique
-    ConstraintPrimaryKey
-    ConstraintForeignKey
-    ConstraintExclude
-    ConstraintInvalid
+	ConstraintCheck
+	ConstraintNotNull
+	ConstraintUnique
+	ConstraintPrimaryKey
+	ConstraintForeignKey
+	ConstraintExclude
+	ConstraintInvalid
 )
 
 type Constraint struct {
-	Type      uint8
-	Columns   []*Column
-	Refernces []*Column
-	Statement string
-	OnDelete  string
-	OnUpdate  string
+	Type       uint8
+	Columns    []*Column
+	References []*Column
+	Statement  string
+	OnDelete   string
+	OnUpdate   string
 }
 
 func buildConstraints(t *Table, ss ...[3]string) []*Constraint {
