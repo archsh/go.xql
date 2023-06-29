@@ -183,12 +183,13 @@ func makeColumns(t *Table, p interface{}, recursive bool, skips ...string) []*Co
 	var ev reflect.Value
 	tt := reflect.TypeOf(p)
 	vv := reflect.ValueOf(p)
-	if tt.Kind() != reflect.Interface {
-		et = tt
-		ev = vv
-	} else {
+	if tt.Kind() == reflect.Interface || tt.Kind() == reflect.Ptr || tt.Kind() == reflect.UnsafePointer {
 		et = tt.Elem()
 		ev = vv.Elem()
+
+	} else {
+		et = tt
+		ev = vv
 	}
 	var fields []*Column
 	for i := 0; i < et.NumField(); i++ {

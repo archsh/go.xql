@@ -82,42 +82,42 @@ type TableDeletable interface {
 	Deletable() bool
 }
 
-func (t *Table) TableName() string {
+func (t Table) TableName() string {
 	if t.schema != "" {
 		return t.schema + "." + t.entity.TableName()
 	}
 	return t.entity.TableName()
 }
 
-func (t *Table) BaseTableName() string {
+func (t Table) BaseTableName() string {
 	return t.entity.TableName()
 }
 
-func (t *Table) GetColumns() []*Column {
+func (t Table) GetColumns() []*Column {
 	return t.columns
 }
 
-func (t *Table) GetConstraints() []*Constraint {
+func (t Table) GetConstraints() []*Constraint {
 	return t.constraints
 }
 
-func (t *Table) GetIndexes() []*Index {
+func (t Table) GetIndexes() []*Index {
 	return t.indexes
 }
 
-func (t *Table) GetPrimaryKeys() []*Column {
+func (t Table) GetPrimaryKeys() []*Column {
 	return t.primaryKeys
 }
 
-func (t *Table) SetSchema(s string) {
+func (t Table) SetSchema(s string) {
 	t.schema = s
 }
 
-func (t *Table) Schema() string {
+func (t Table) Schema() string {
 	return t.schema
 }
 
-func (t *Table) GetColumn(name string) (*Column, bool) {
+func (t Table) GetColumn(name string) (*Column, bool) {
 	if c, ok := t.mColumns[name]; ok {
 		return c, true
 	}

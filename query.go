@@ -56,11 +56,16 @@ func (xr *XRow) Scan(dest ...interface{}) error {
 		d := dest[0]
 		if reflect.TypeOf(d) == reflect.TypeOf(xr.qs.table.entity) {
 			var outputs []interface{}
-			r := reflect.ValueOf(d)
+			var r reflect.Value
+			if vv := reflect.ValueOf(d); vv.Kind() == reflect.Interface || vv.Kind() == reflect.Ptr || vv.Kind() == reflect.UnsafePointer {
+				r = vv.Elem()
+			} else {
+				r = vv
+			}
 			for _, qc := range xr.qs.queries {
 				c, _ := xr.qs.table.GetColumn(qc.FieldName)
 				//fmt.Printf("> Scan to field '%s' to '%s' .\n", qc.FieldName, c.ElemName)
-				vp := r.Elem().FieldByName(c.ElemName).Addr().Interface()
+				vp := r.FieldByName(c.ElemName).Addr().Interface()
 				outputs = append(outputs, vp)
 			}
 			return xr.row.Scan(outputs...)
@@ -85,10 +90,15 @@ func (xr *XRows) Scan(dest ...interface{}) error {
 		d := dest[0]
 		if reflect.TypeOf(d) == reflect.TypeOf(xr.qs.table.entity) {
 			var outputs []interface{}
-			r := reflect.ValueOf(d)
+			var r reflect.Value
+			if vv := reflect.ValueOf(d); vv.Kind() == reflect.Interface || vv.Kind() == reflect.Ptr || vv.Kind() == reflect.UnsafePointer {
+				r = vv.Elem()
+			} else {
+				r = vv
+			}
 			for _, qc := range xr.qs.queries {
 				c, _ := xr.qs.table.GetColumn(qc.FieldName)
-				vp := r.Elem().FieldByName(c.ElemName).Addr().Interface()
+				vp := r.FieldByName(c.ElemName).Addr().Interface()
 				outputs = append(outputs, vp)
 			}
 			return xr.rows.Scan(outputs...)
