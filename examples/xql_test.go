@@ -78,9 +78,9 @@ func (c Student) TableName() string {
 	return "students"
 }
 
-var StudentTable = xql.DeclareTable(&Student{})
-var TeacherTable = xql.DeclareTable(&Teacher{})
-var SchoolTable = xql.DeclareTable(&School{})
+var StudentTable = xql.DeclareTable(Student{})
+var TeacherTable = xql.DeclareTable(Teacher{})
+var SchoolTable = xql.DeclareTable(School{})
 var session *xql.Session
 var schoolId int
 
@@ -101,7 +101,7 @@ func TestMain(m *testing.M) {
 
 	c := School{Name: "Xinxiu Primary School", Description: "Xinxiu"}
 	c.Tags = []string{"Primary", "Luohu", "Shenzhen", "Public"}
-	if e := session.Table(SchoolTable).InsertWithInsertedId(&c, "id", &schoolId); nil != e {
+	if e := session.Table(SchoolTable).InsertWithInsertedId(c, "id", &schoolId); nil != e {
 		fmt.Println("Insert failed:> ", e)
 		os.Exit(-1)
 	} else {
@@ -182,7 +182,7 @@ func TestQuerySet_Insert(t *testing.T) {
 	c2.Character.Weight = 88
 	c1.SchoolId = schoolId
 	c2.SchoolId = schoolId
-	if n, e := session.Table(StudentTable).Insert(&c1, &c2); nil != e {
+	if n, e := session.Table(StudentTable).Insert(c1, c2); nil != e {
 		t.Fatal("Insert failed:> ", e)
 	} else {
 		t.Log("Inserted Students: ", n)
@@ -292,7 +292,7 @@ func Benchmark_InsertSchool(b *testing.B) {
 			Description: "Just for test",
 			Tags:        []string{"A", "B", "C"},
 		}
-		if e := session.Table(SchoolTable).InsertWithInsertedId(&s, "id", &schoolId); nil != e {
+		if e := session.Table(SchoolTable).InsertWithInsertedId(s, "id", &schoolId); nil != e {
 			b.Fatal("Insert failed:> ", e)
 		} else {
 			b.Log("Inserted Students: ", schoolId, s.Name)
@@ -312,7 +312,7 @@ func Benchmark_InsertStudent(b *testing.B) {
 		c1.Character.Attitude = "OK"
 		c1.Character.Height = 172
 		c1.Character.Weight = 68
-		if e := session.Table(StudentTable).InsertWithInsertedId(&c1, "id", &c1.Id); nil != e {
+		if e := session.Table(StudentTable).InsertWithInsertedId(c1, "id", &c1.Id); nil != e {
 			b.Fatal("Insert failed:> ", e)
 		} else {
 			b.Log("Inserted Students: ", c1.Id, c1.FullName)

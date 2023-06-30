@@ -54,7 +54,7 @@ func (xr *XRow) Scan(dest ...interface{}) error {
 	}
 	if len(dest) == 1 {
 		d := dest[0]
-		if reflect.TypeOf(d) == reflect.TypeOf(xr.qs.table.entity) {
+		if reflect.TypeOf(d) == reflect.TypeOf(xr.qs.table.entity) || reflect.TypeOf(d).Elem() == reflect.TypeOf(xr.qs.table.entity) {
 			var outputs []interface{}
 			var r reflect.Value
 			if vv := reflect.ValueOf(d); vv.Kind() == reflect.Interface || vv.Kind() == reflect.Ptr || vv.Kind() == reflect.UnsafePointer {
@@ -88,7 +88,7 @@ func (xr *XRows) Scan(dest ...interface{}) error {
 	}
 	if len(dest) == 1 {
 		d := dest[0]
-		if reflect.TypeOf(d) == reflect.TypeOf(xr.qs.table.entity) {
+		if reflect.TypeOf(d) == reflect.TypeOf(xr.qs.table.entity) || reflect.TypeOf(d).Elem() == reflect.TypeOf(xr.qs.table.entity) {
 			var outputs []interface{}
 			var r reflect.Value
 			if vv := reflect.ValueOf(d); vv.Kind() == reflect.Interface || vv.Kind() == reflect.Ptr || vv.Kind() == reflect.UnsafePointer {
@@ -398,7 +398,7 @@ func (qs QuerySet) InsertWithInsertedId(obj interface{}, idname string, id inter
 		}
 	}
 	if reflect.TypeOf(obj) != reflect.TypeOf(qs.table.entity) {
-		return errors.New(fmt.Sprintf("Invalid data type: %s <> %s", reflect.TypeOf(obj).String(),
+		return errors.New(fmt.Sprintf("Invalid data type: %s(%s) <> %s", reflect.TypeOf(obj).String(), reflect.TypeOf(obj).Kind().String(),
 			reflect.TypeOf(qs.table.entity).String()))
 	}
 	if pobj, ok := obj.(TablePreInsert); ok {
