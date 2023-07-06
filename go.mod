@@ -2,4 +2,4 @@ module github.com/archsh/go.xql
 
 go 1.13
 
-require github.com/lib/pq v1.1.1
+require github.com/lib/pq v1.10.9
