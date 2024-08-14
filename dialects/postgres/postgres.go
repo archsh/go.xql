@@ -10,7 +10,7 @@ import (
 	"github.com/archsh/go.xql"
 )
 
-type PostgresDialect struct {
+type postgresDialect struct {
 }
 
 /*
@@ -176,7 +176,7 @@ func makeIndexes(t *xql.Table, idx int, i ...*xql.Index) (ret []string) {
 
 // Drop
 // Implement the IDialect interface for generate DROP statement
-func (pb PostgresDialect) Drop(t *xql.Table, force bool) (stm string, args []interface{}, err error) {
+func (pb postgresDialect) Drop(t *xql.Table, force bool) (stm string, args []interface{}, err error) {
 	if nil == t {
 		err = errors.New("table can not be nil")
 		return
@@ -202,7 +202,7 @@ func (pb PostgresDialect) Drop(t *xql.Table, force bool) (stm string, args []int
 
 // Create
 // Implement the IDialect interface for creating table.
-func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
+func (pb postgresDialect) Create(t *xql.Table, options ...interface{}) (s string, args []interface{}, err error) {
 	var createSQL string
 	var tableName = t.TableName()
 	createSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " ( "
@@ -229,7 +229,7 @@ func (pb PostgresDialect) Create(t *xql.Table, options ...interface{}) (s string
 
 // Select
 // Implement the IDialect interface for select values.
-func (pb PostgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, lockFor string, offset int64, limit int64) (s string, args []interface{}, err error) {
+func (pb postgresDialect) Select(t *xql.Table, cols []xql.QueryColumn, filters []xql.QueryFilter, orders []xql.QueryOrder, lockFor string, offset int64, limit int64) (s string, args []interface{}, err error) {
 	var colNames []string
 	for _, x := range cols {
 		colNames = append(colNames, x.String())
@@ -315,7 +315,7 @@ func isEmptyValue(v reflect.Value) bool {
 
 // Insert
 // Implement the IDialect interface to generate insert statement
-func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (s string, args []interface{}, err error) {
+func (pb postgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (s string, args []interface{}, err error) {
 	s = "INSERT INTO "
 	s += t.TableName()
 	var cols []string
@@ -356,7 +356,7 @@ func (pb PostgresDialect) Insert(t *xql.Table, obj interface{}, col ...string) (
 
 // Insert
 // Implement the IDialect interface to generate insert statement
-func (pb PostgresDialect) InsertWithInsertedId(t *xql.Table, obj interface{}, insertedId string, col ...string) (s string, args []interface{}, err error) {
+func (pb postgresDialect) InsertWithInsertedId(t *xql.Table, obj interface{}, insertedId string, col ...string) (s string, args []interface{}, err error) {
 	s = "INSERT INTO "
 	s += t.TableName()
 	var cols []string
@@ -407,7 +407,7 @@ func makeSetStr(uc xql.UpdateColumn, i int, args []interface{}) ([]interface{}, 
 
 // Update
 // Implement the IDialect interface to generate UPDATE statement
-func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
+func (pb postgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols ...xql.UpdateColumn) (s string, args []interface{}, err error) {
 	s = "UPDATE "
 	s += t.TableName()
 	if len(cols) < 1 {
@@ -467,7 +467,7 @@ func (pb PostgresDialect) Update(t *xql.Table, filters []xql.QueryFilter, cols .
 
 // Delete
 // Implement the IDialect interface to generate DELETE statement
-func (pb PostgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s string, args []interface{}, err error) {
+func (pb postgresDialect) Delete(t *xql.Table, filters []xql.QueryFilter) (s string, args []interface{}, err error) {
 	s = "DELETE FROM "
 	s += t.TableName()
 	var n int
@@ -536,5 +536,5 @@ func InitializeUUID(db *sql.DB, schema ...string) error {
 
 // Register the dialect.
 func init() {
-	xql.RegisterDialect("postgres", &PostgresDialect{})
+	xql.RegisterDialect("postgres", &postgresDialect{})
 }
