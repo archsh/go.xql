@@ -84,14 +84,14 @@ func DefaultDeclare(f reflect.StructField, props PropertySet) (string, error) {
 		return BigInteger(0).Declare(props), nil
 	case reflect.Bool:
 		return Boolean(false).Declare(props), nil
-		//return "BOOLEAN", nil
 	case reflect.Float32:
 		//return "FLOAT", nil
 		return Real(0.0).Declare(props), nil
 	case reflect.Float64:
 		return Double(0.0).Declare(props), nil
+	default:
+		return "", errors.New("Unknown type of:>" + f.Name)
 	}
-	return "", errors.New("Unknown type of:>" + f.Name)
 
 }
 
