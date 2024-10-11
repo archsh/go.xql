@@ -28,7 +28,7 @@ func (j UUID) Value() (driver.Value, error) {
 	if j == "" {
 		return nil, nil
 	} else {
-		return j, nil
+		return []byte(j), nil
 	}
 }
 
